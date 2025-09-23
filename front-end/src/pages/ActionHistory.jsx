@@ -9,10 +9,24 @@ import { parse, format, isValid } from 'date-fns';
 const ActionHistory = () => {
     const [dataActionHistory, setDataActionHistory] = useState([]);
     const [number, setNumber] = useState(1);
-    const [searchBy, setSearchBy] = useState("all");
-    const [searchValue, setSearchValue] = useState("");
-    const [temp1, setTemp1] = useState("all");
-    const [temp2, setTemp2] = useState("");
+    const [dataFilter, setDataFilter] = useState({
+        device: "all",
+        action: "all",
+        datetime: ""
+    });
+    const [dataSearch, setDataSearch] = useState({
+        device: "all",
+        action: "all",
+        datetime: ""
+    });
+    const handlDataFilter = (e) => {
+        const { name, value } = e.target;
+        setDataFilter((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    }
+
     const [page, setPage] = useState(1);
     const handlePage = (page) => {
         setPage(page);
@@ -64,44 +78,40 @@ const ActionHistory = () => {
     //lấy dữ liệu
     useEffect(() => {
         const fetch = async () => {
+
+            let searchDate = "";
+            const words = dataSearch.datetime.trim().split(" ");
+            if (words.length == 2) {
+                const [day, month, year] = words[1].split('/');
+                const reversedDate = `${year}-${month}-${day}`;
+                searchDate = reversedDate.trim() + " " + words[0].trim();
+            }
+            else if (words.length == 1) {
+                const date = dataSearch.datetime.trim().split("/");
+                if (date.length == 3) {
+                    searchDate = `${date[2]}-${date[1]}-${date[0]}`;
+                }
+                else if (date.length == 2) {
+                    searchDate = `${date[1]}-${date[0].padStart(2, 0)}`;
+                }
+            }
+
+
+
+
             try {
-                const words = searchValue.trim().split(" ");
-                let isDate = false;
-                let searchDate = "";
-                // nếu là chuỗi , xử lý theo đúng format ngày của database
-                if (words.length == 2) {
-                    isDate = true;
-                    const [day, month, year] = words[1].split('/');
-                    const reversedDate = `${year}-${month.padStart(2, 0)}-${day.padStart(2, 0)}`;
-                    searchDate = reversedDate.trim() + " " + words[0].trim();
-                }
-                else if (words.length == 1) {
-                    isDate = searchValue.trim().includes("/");
-
-                    if (isDate) {
-                        const date = searchValue.trim().split("/");
-
-                        if (date.length == 3) {
-                            searchDate = `${date[2]}-${date[1].padStart(2, 0)}-${date[0].padStart(2, 0)}`;
-                        }
-                        else if (date.length == 2) {
-                            searchDate = `${date[1]}-${date[0].padStart(2, 0)}`;
-                        }
-
-                    }
-                }
-
                 const data = {
                     "page": page,
                     "sizePage": 10,
-                    "searchBy": searchBy,
-                    "searchValue": isDate ? searchDate : searchValue,
                     "sortBy": sortBy.name,
+                    "device": dataSearch.device,
+                    "action": dataSearch.action,
+                    "datetime": searchDate,
                     "statusSortBy": sortBy.status
                 };
                 console.log(data);
                 const res = await axios.post("http://localhost:3001/action-history", data);
-                console.log(res);
+                // console.log(res);
                 setDataActionHistory(res.data.data);
                 setNumber(res.data.totalRecord);
             } catch (error) {
@@ -112,9 +122,8 @@ const ActionHistory = () => {
 
         }
         fetch();
-        console.log(dataActionHistory);
 
-    }, [page, searchBy, searchValue, sortBy]);
+    }, [page, sortBy, dataSearch]);
     return (<>
         <Header />
         <div className="" style={{ background: "#D9E5F6" }}>
@@ -124,7 +133,10 @@ const ActionHistory = () => {
                     {/* lọc thiết bị */}
                     <div className="col-2 d-flex align-items-center">
                         <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Device</label>
-                        <select id="deviceSelect" class="form-select border border-dark p-2" >
+                        <select name="device" id="deviceSelect" class="form-select border border-dark p-2" onChange={
+                            (e) => {
+                                handlDataFilter(e)
+                            }}>
                             <option selected value="all">All</option>
                             <option value="led">Led</option>
                             <option value="fan">Fan</option>
@@ -134,22 +146,30 @@ const ActionHistory = () => {
                     {/* lọc theo hành động */}
                     <div className="col-2 d-flex align-items-center">
                         <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Action</label>
-                        <select id="deviceSelect" class="form-select border border-dark p-2" >
+                        <select onChange={(e) => {
+                            handlDataFilter(e)
+                        }} id="deviceSelect" name="action" class="form-select border border-dark p-2" >
                             <option selected value="all">All</option>
                             <option value="on">On</option>
                             <option value="off">Off</option>
                         </select>
                     </div>
                     <div className="col-5">
-                        <input onChange={(e) => { setTemp2(e.target.value) }} type="text" class="form-control border border-dark p-2" placeholder="Search Datetime" />
+                        <input name="datetime" onChange={(e) => { handlDataFilter(e) }} type="text" class="form-control border border-dark p-2" placeholder="Search Datetime" />
                     </div>
 
                     <div className="col-3">
-                        <button onClick={() => {
-                            setSearchBy(temp1.trim());
-                            setSearchValue(temp2.trim());
-                        }} className="btn btn-primary py-2 px-4 ">Search</button>
+                        <button className="btn btn-primary py-2 px-4" onClick={() => {
+                            setDataSearch(dataFilter);
+                        }}>Search</button>
                     </div>
+                </div>
+
+                <div className="col mt-2">
+                    <small className="text-start d-block">
+                        <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>
+                        <div>HH:mm:ss dd/MM/yyyy &nbsp; ví dụ: <strong>15:53:48 10/09/2025</strong></div>
+                    </small>
                 </div>
 
                 <div className="row text-center mt-3">

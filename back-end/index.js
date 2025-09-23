@@ -139,12 +139,13 @@ app.post("/data-sensor", async (req, res) => {
 //action-history
 //đếm tổng các bản ghi
 app.post("/action-history", async (req, res) => {
-  const { page, sizePage, searchBy, searchValue, sortBy, statusSortBy } = req.body;
+  const { page, sizePage, device, action, datetime, sortBy, statusSortBy } = req.body;
+  console.log(req.body);
   if (typeof page !== 'number' || typeof sizePage !== 'number') {
     return res.status(400).json({ error: 'Invalid input: page and sizePage must be numbers' });
   }
   try {
-    const actionHistory = await db.getActionHistory(page, sizePage, searchBy, searchValue, sortBy, statusSortBy);
+    const actionHistory = await db.getActionHistory(page, sizePage, device, action, datetime, sortBy, statusSortBy);
     res.json(actionHistory);
   } catch (error) {
     console.error('Error fetching data:', error);

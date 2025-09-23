@@ -93,19 +93,17 @@ async function saveActionHistory(data) {
   }
 }
 //action history
-async function getActionHistory(page = 1, sizePage = 10, q1 = null, q2 = null, sortBy = null, statusSortBy = null) {
+async function getActionHistory(page = 1, sizePage = 10, device = 'all', action = 'all', datetime = '', sortBy = null, statusSortBy = null) {
   const offset = (page - 1) * sizePage;
-  let query = "SELECT * From ( select * from action_history";
-  //kiểm tra q2 có phải ngày hay ko
-  if (q1 === "all" && q2 != "") {
-    query += ` where device like '%${q2}%' or action like '%${q2}%' or created_at like '%${q2}%'`;
+  let query = "SELECT * From ( select * from action_history where 1 = 1";
+  if (device != 'all') {
+    query += ` and device like '%${device}%'`;
   }
-  else if (q1 != "all" && q2 != "") {
-    if (q1 == "created_at") {
-      query += ` where ${q1} like '%${q2}%'`;
-    } else {
-      query += ` where ${q1} like '%${q2}%'`;
-    }
+  if (action != 'all'){
+    query += ` and action like '%${action}%'`;
+  }
+  if(datetime!=''){
+     query += ` and created_at like '%${datetime}%'`;
   }
 
   let query2 = query + ` ) as data`
@@ -116,8 +114,8 @@ async function getActionHistory(page = 1, sizePage = 10, q1 = null, q2 = null, s
   if (statusSortBy) {
     query += ` desc`;
   }
-  const [totalRecord] = await pool.query(query2, [q2]);
-  const [row] = await pool.query(query, [q2]);
+  const [totalRecord] = await pool.query(query2);
+  const [row] = await pool.query(query);
   console.log(query);
   return {
     data: row,
