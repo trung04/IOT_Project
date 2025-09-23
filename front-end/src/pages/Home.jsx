@@ -39,6 +39,7 @@ const options = {
             text: 'Monthly Sales Line Chart',
         },
     },
+    maintainAspectRatio: false, // Cho phép tự co dãn
 };
 
 const Home = () => {
@@ -243,11 +244,11 @@ const Home = () => {
     return (<>
         <Header />
 
-        <div className="" style={{ background: "#D9E5F6", minHeight: "100vh" }}>
-            <p className="fw-bold fs-1 p-5 ">Home</p>
+        <div className="" style={{ background: "#D9E5F6",height:"90vh " }} >
+            <p className="fw-bold fs-2 ms-5  ">Home</p>
             <div className="container text-center" style={{ overflow: 'hidden' }}>
                 <div className="row mb-2">
-                    <div className="col fw-bold py-5 me-2 fs-3" style={{ background: "#FFFFFF" }}>
+                    <div className="col fw-bold d-flex justify-content-center align-items-center  me-2 fs-3" style={{ background: "#FFFFFF" }}>
                         DEVICE
 
                     </div>
@@ -466,7 +467,7 @@ const Home = () => {
                     </div>
                 </div>
                 <div className="row mb-2">
-                    <div className="col fw-bold py-5 me-2 fs-3" style={{ background: "#FFFFFF" }}>
+                    <div className="col fw-bold d-flex justify-content-center align-items-center  me-2   fs-3" style={{ background: "#FFFFFF" }}>
                         DATA
                     </div>
                     <div className="col me-2 d-flex align-items-center justify-content-center " style={{ background: "#FFFFFF", width: 'auto', height: "auto", minHeight: "150px" }}>
@@ -603,17 +604,8 @@ const Home = () => {
                     </div>
 
                 </div>
-                <div className="row mb-5">
-                    <Line options={options} data={data} style={{ backgroundColor: '#FFFFFF' }} />
-
-
-                    {/* <div className="col">
+                <div className="row"   style={{ width: "100%", height: "40vh" }} >
                         <Line options={options} data={data} style={{ backgroundColor: '#FFFFFF' }} />
-
-                    </div> */}
-
-
-
                 </div>
 
 

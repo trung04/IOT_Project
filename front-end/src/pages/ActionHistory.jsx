@@ -117,28 +117,33 @@ const ActionHistory = () => {
     }, [page, searchBy, searchValue, sortBy]);
     return (<>
         <Header />
-        <div className="" style={{ background: "#D9E5F6", minHeight: "100vh" }}>
-            <p className="fw-bold fs-1 p-5 ">ACTION HISTORY</p>
+        <div className="" style={{ background: "#D9E5F6" }}>
+            <p className="fw-bold fs-2 ms-5  ">Action History</p>
             <div className="container">
                 <div className="row">
-                    <div className="col">
-                        <input onChange={(e) => { setTemp2(e.target.value) }} type="text" class="form-control border border-dark p-2" placeholder="Search( Device, Action, Datetime )" />
-                        <small className="text-start d-block">
-                            <div className="fw-bold ">Tìm kiếm theo ngày</div>
-                            <div>dd/MM/yyyy &nbsp; ví dụ: <strong>10/09/2025</strong></div>
-                            <div>HH:mm:ss dd/MM/yyyy &nbsp; ví dụ: <strong>15:53:48 10/09/2025</strong></div>
-                        </small>
-                    </div>
-                    <div className="col-2 ">
-                        <select onChange={(e) => {
-                            setTemp1(e.target.value)
-                        }} class="form-select border border-dark p-2" aria-label="Default select example">
+                    {/* lọc thiết bị */}
+                    <div className="col-2 d-flex align-items-center">
+                        <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Device</label>
+                        <select id="deviceSelect" class="form-select border border-dark p-2" >
                             <option selected value="all">All</option>
-                            <option value="device">Device</option>
-                            <option value="action">Action</option>
-                            <option value="created_at">Datetime</option>
+                            <option value="led">Led</option>
+                            <option value="fan">Fan</option>
+                            <option value="ac">AC(Air Conditioner)</option>
                         </select>
                     </div>
+                    {/* lọc theo hành động */}
+                    <div className="col-2 d-flex align-items-center">
+                        <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Action</label>
+                        <select id="deviceSelect" class="form-select border border-dark p-2" >
+                            <option selected value="all">All</option>
+                            <option value="on">On</option>
+                            <option value="off">Off</option>
+                        </select>
+                    </div>
+                    <div className="col-5">
+                        <input onChange={(e) => { setTemp2(e.target.value) }} type="text" class="form-control border border-dark p-2" placeholder="Search Datetime" />
+                    </div>
+
                     <div className="col-3">
                         <button onClick={() => {
                             setSearchBy(temp1.trim());
@@ -147,7 +152,7 @@ const ActionHistory = () => {
                     </div>
                 </div>
 
-                <div className="row mt-5 text-center">
+                <div className="row text-center mt-3">
                     <table className="table">
                         <thead className="table-dark">
                             <tr>

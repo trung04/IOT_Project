@@ -106,8 +106,8 @@ const DataSensor = () => {
 
     return (<>
         <Header />
-        <div className="" style={{ background: "#D9E5F6", minHeight: "100vh" }}>
-            <p className="fw-bold fs-1 p-5 ">DATA SENSOR</p>
+        <div className="" style={{ background: "#D9E5F6"}}>
+              <p className="fw-bold fs-2 ms-5  ">Data Sensor</p>
             <div className="container text-center ">
                 <div className="row">
                     <div className="col">
@@ -115,7 +115,6 @@ const DataSensor = () => {
                         <small className="text-start d-block">
                             <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>
                             <div>HH:mm:ss dd/MM/yyyy &nbsp; ví dụ: <strong>15:53:48 10/09/2025</strong></div>
-                            <div>dd/MM/yyyy &nbsp; ví dụ: <strong>10/09/2025</strong></div>
                         </small>
 
                         {error && (<>
@@ -142,7 +141,7 @@ const DataSensor = () => {
                         }}>Search</button>
                     </div>
                 </div>
-                <div className="row mt-5">
+                <div className="row">
                     <table className="table">
                         <thead className="table-dark">
                             <tr>

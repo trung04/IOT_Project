@@ -5,8 +5,8 @@ import React from "react";
 const Profile = () => {
     return (<>
         <Header />
-        <div className="" style={{ background: "#D9E5F6", minHeight: "100vh" }}>
-            <p className="fw-bold fs-1 p-5 ">PROFILE</p>
+        <div className="" style={{ background: "#D9E5F6"}}>
+           <p className="fw-bold fs-2 ms-5  ">Profile</p>
             <div className="container d-flex justify-content-center align-items-center p-4">
                 <div className="row" style={{ width: '50%' }}>
                     <div className="col-5 text-center py-5" style={{ background: '#007BFF' }}>
