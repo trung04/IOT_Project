@@ -1,7 +1,15 @@
 const express = require('express');
 const mqtt = require("mqtt");
-const brokerUrl = 'mqtt://broker.emqx.io:1883';
-const client = mqtt.connect(brokerUrl);
+const brokerUrl = 'mqtts://1b960938869f4e2f93e368cbe2a8504d.s1.eu.hivemq.cloud';
+const optionMQTT = {
+    port: 8883,
+    clientId: 'nodejs_client_' + Math.random().toString(16).substr(2, 8),
+    username: 'trung',
+    password: '123456789aA',
+    rejectUnauthorized: false  // bỏ kiểm tra TLS certificate (tương tự setInsecure trên ESP32)
+};
+const client = mqtt.connect(brokerUrl,optionMQTT);
+
 const app = express();
 const port = 3001;
 const cors = require('cors');
@@ -11,6 +19,28 @@ app.use(cors());
 app.use(express.json()); // middleware đọc JSON từ client
 const db = require('./database');  // import module database.js
 const server = http.createServer(app);
+const swaggerUi = require("swagger-ui-express");
+const swaggerJsdoc = require("swagger-jsdoc");
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Data Sensor API",
+      version: "1.0.0",
+      description: "API quản lý và lấy dữ liệu cảm biến",
+    },
+    servers: [
+      {
+        url: "http://localhost:3001",
+      },
+    ],
+  },
+  apis: ["./openapi/*.yaml"], // nơi chứa comment JSDoc để swagger-jsdoc quét
+};
+const swaggerSpec = swaggerJsdoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 
 const io = new Server(server, {
   cors: {
@@ -95,7 +125,7 @@ app.post('/pub-data-device', (req, res) => {
       console.log("thành cồng");
     }
   });
-  res.send("thành công pub data đến topic device :" + data.device);
+  res.send(`thành công pub data đến topic device:${data.device}, status:${data.status}`);
 });
 
 
@@ -122,11 +152,9 @@ app.get("/latest-data-sensor", async (req, res) => {
 });
 
 //lấy dữ liệu data-sensor
-app.post("/data-sensor", async (req, res) => {
-  const { page, sizePage, searchBy, searchValue, sortBy, statusSortBy } = req.body;
-  if (typeof page !== 'number' || typeof sizePage !== 'number') {
-    return res.status(400).json({ error: 'Invalid input: page and sizePage must be numbers' });
-  }
+app.get("/data-sensor", async (req, res) => {
+  const { page, sizePage, searchBy, searchValue, sortBy, statusSortBy } = req.query;
+  console.log(req.query);
   try {
     const dataSensor = await db.getDataSensor(page, sizePage, searchBy, searchValue, sortBy, statusSortBy);
     res.json(dataSensor);
@@ -138,12 +166,8 @@ app.post("/data-sensor", async (req, res) => {
 
 //action-history
 //đếm tổng các bản ghi
-app.post("/action-history", async (req, res) => {
-  const { page, sizePage, device, action, datetime, sortBy, statusSortBy } = req.body;
-  console.log(req.body);
-  if (typeof page !== 'number' || typeof sizePage !== 'number') {
-    return res.status(400).json({ error: 'Invalid input: page and sizePage must be numbers' });
-  }
+app.get("/action-history", async (req, res) => {
+  const { page, sizePage, device, action, datetime, sortBy, statusSortBy } = req.query;
   try {
     const actionHistory = await db.getActionHistory(page, sizePage, device, action, datetime, sortBy, statusSortBy);
     res.json(actionHistory);

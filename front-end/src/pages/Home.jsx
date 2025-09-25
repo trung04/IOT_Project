@@ -604,7 +604,7 @@ const Home = () => {
                     </div>
 
                 </div>
-                <div className="row"   style={{ width: "100%", height: "40vh" }} >
+                <div className="row"   style={{ width: "101.3%", height: "43vh" }} >
                         <Line options={options} data={data} style={{ backgroundColor: '#FFFFFF' }} />
                 </div>
 

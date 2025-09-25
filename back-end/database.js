@@ -54,10 +54,11 @@ async function getDataSensor(page = 1, sizePage = 10, q1 = null, q2 = null, sort
   const [totalRecord] = await pool.query(query2, [q2]);
   //sắp xếp
   query += ` order by ${sortBy}`;
-  if (statusSortBy) {
+  if (statusSortBy === 'true') {
     query += ` desc`;
   }
   const [row] = await pool.query(query, [q2]);
+  console.log(statusSortBy);
   console.log(query);
   return {
     data: row,
@@ -111,7 +112,7 @@ async function getActionHistory(page = 1, sizePage = 10, device = 'all', action 
   query += ` ) as data`;
   //sắp xếp
   query += ` order by ${sortBy}`;
-  if (statusSortBy) {
+  if (statusSortBy==='true') {
     query += ` desc`;
   }
   const [totalRecord] = await pool.query(query2);

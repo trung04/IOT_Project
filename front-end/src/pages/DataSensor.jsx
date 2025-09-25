@@ -57,28 +57,28 @@ const DataSensor = () => {
                 }
                 else if (words.length == 1) {
                     const date = searchValue.trim().split("/");
-                   
-                    if(date.length==3){
-                        searchDate= `${date[2]}-${date[1]}-${date[0]}`;
+
+                    if (date.length == 3) {
+                        searchDate = `${date[2]}-${date[1]}-${date[0]}`;
                     }
-                    else if(date.length==2){
-                        
-                        searchDate= `${date[1]}-${date[0].padStart(2,0)}`;
+                    else if (date.length == 2) {
+
+                        searchDate = `${date[1]}-${date[0].padStart(2, 0)}`;
                     }
                 }
 
             }
             try {
-                const data = {
-                    "page": page,
-                    "sizePage": 10,
-                    "searchBy": searchBy,
-                    "searchValue": isNumber ? searchValue : searchDate,
-                    "sortBy": sortBy.name,
-                    "statusSortBy": sortBy.status
-                };
-                console.log(data);
-                const res = await axios.post("http://localhost:3001/data-sensor", data);
+                const res = await axios.get("http://localhost:3001/data-sensor", {
+                    params: {
+                        page: page,
+                        sizePage: 10,
+                        searchBy: searchBy,
+                        searchValue: isNumber ? searchValue : searchDate,
+                        sortBy: sortBy.name,
+                        statusSortBy: sortBy.status
+                    }
+                });
                 console.log(res);
                 setDataSensor(res.data.data);
                 setNumber(res.data.totalRecord);
@@ -106,8 +106,8 @@ const DataSensor = () => {
 
     return (<>
         <Header />
-        <div className="" style={{ background: "#D9E5F6"}}>
-              <p className="fw-bold fs-2 ms-5  ">Data Sensor</p>
+        <div className="" style={{ background: "#D9E5F6" }}>
+            <p className="fw-bold fs-2 ms-5  ">Data Sensor</p>
             <div className="container text-center ">
                 <div className="row">
                     <div className="col">

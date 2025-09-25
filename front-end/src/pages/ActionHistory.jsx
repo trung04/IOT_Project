@@ -100,17 +100,17 @@ const ActionHistory = () => {
 
 
             try {
-                const data = {
-                    "page": page,
-                    "sizePage": 10,
-                    "sortBy": sortBy.name,
-                    "device": dataSearch.device,
-                    "action": dataSearch.action,
-                    "datetime": searchDate,
-                    "statusSortBy": sortBy.status
-                };
-                console.log(data);
-                const res = await axios.post("http://localhost:3001/action-history", data);
+                const res = await axios.get("http://localhost:3001/action-history", {
+                    params: {
+                        page: page,
+                        sizePage: 10,
+                        sortBy: sortBy.name,
+                        device: dataSearch.device,
+                        action: dataSearch.action,
+                        datetime: searchDate,
+                        statusSortBy: sortBy.status
+                    }
+                });
                 // console.log(res);
                 setDataActionHistory(res.data.data);
                 setNumber(res.data.totalRecord);
