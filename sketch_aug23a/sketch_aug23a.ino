@@ -182,5 +182,5 @@ void loop() {
   Serial.println(DataSensor);
   //pub dữ liệu lên topic data/sensor
   client.publish(mqtt_topic, DataSensor.c_str());  // gửi lên topic riêng
-  delay(1000);
+  delay(3000);
 }

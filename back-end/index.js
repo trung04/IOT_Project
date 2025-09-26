@@ -88,13 +88,13 @@ client.on('message', async (topic, message) => {
   if (topic === "data/sensor") {
     try {
       const data = JSON.parse(message.toString()); // Chuyển buffer -> string -> JSON
-      // console.log("Dữ liệu JSON nhận được:", data);
-      // const insertId = await db.saveDataSensor(data);
-      // if (insertId) {
-      //   console.log("Đã lưu bản ghi vào data sensor id " + insertId);
-      // }
+      console.log("Dữ liệu JSON nhận được:", data);
+      const insertId = await db.saveDataSensor(data);
+      if (insertId) {
+        console.log("Đã lưu bản ghi vào data sensor id " + insertId);
+      }
       // Truy cập dữ liệu
-      // io.emit('mqtt_message', data);
+      io.emit('mqtt_message', data);
     } catch (err) {
       console.error("Lỗi khi parse JSON:", err.message);
     }
@@ -105,8 +105,6 @@ client.on('message', async (topic, message) => {
     if (insertId) {
       console.log("Đã lưu bản ghi vào action history id " + insertId);
     }
-
-
   }
 });
 
@@ -140,16 +138,7 @@ app.post('/pub-data-device', (req, res) => {
 //   }
 // });
 
-app.get("/latest-data-sensor", async (req, res) => {
-  try {
-    const data = await db.getLatestDataSensor();
-    //lấy 9 dữ liệu cảm biến mới nhất
-    io.emit('data_sensor', data);
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+
 
 //lấy dữ liệu data-sensor
 app.get("/data-sensor", async (req, res) => {
@@ -158,6 +147,17 @@ app.get("/data-sensor", async (req, res) => {
   try {
     const dataSensor = await db.getDataSensor(page, sizePage, searchBy, searchValue, sortBy, statusSortBy);
     res.json(dataSensor);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get("/latest-data-sensor", async (req, res) => {
+  try {
+    const data = await db.getLatestDataSensor();
+    //lấy 9 dữ liệu cảm biến mới nhất
+    io.emit('data_sensor', data);
   } catch (error) {
     console.error('Error fetching data:', error);
     res.status(500).json({ error: 'Internal server error' });
