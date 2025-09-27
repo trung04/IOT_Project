@@ -129,42 +129,44 @@ const ActionHistory = () => {
         <div className="" style={{ background: "#D9E5F6" }}>
             <p className="fw-bold fs-2 ms-5  ">Action History</p>
             <div className="container">
-                <div className="row">
-                    {/* lọc thiết bị */}
-                    <div className="col-2 d-flex align-items-center">
-                        <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Device</label>
-                        <select name="device" id="deviceSelect" class="form-select border border-dark p-2" onChange={
-                            (e) => {
+                <form onSubmit={(e) => {
+                    e.preventDefault(); // chặn reload
+                    setDataSearch(dataFilter);
+                }}>
+                    <div className="row">
+                        {/* lọc thiết bị */}
+                        <div className="col-2 d-flex align-items-center">
+                            <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Device</label>
+                            <select name="device" id="deviceSelect" className="form-select border border-dark p-2" onChange={
+                                (e) => {
+                                    handlDataFilter(e)
+                                }}>
+                                <option selected value="all">All</option>
+                                <option value="led">Led</option>
+                                <option value="fan">Fan</option>
+                                <option value="ac">AC(Air Conditioner)</option>
+                            </select>
+                        </div>
+                        {/* lọc theo hành động */}
+                        <div className="col-2 d-flex align-items-center">
+                            <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Action</label>
+                            <select onChange={(e) => {
                                 handlDataFilter(e)
-                            }}>
-                            <option selected value="all">All</option>
-                            <option value="led">Led</option>
-                            <option value="fan">Fan</option>
-                            <option value="ac">AC(Air Conditioner)</option>
-                        </select>
-                    </div>
-                    {/* lọc theo hành động */}
-                    <div className="col-2 d-flex align-items-center">
-                        <label htmlFor="deviceSelect" className="form-label fw-bold me-3">Action</label>
-                        <select onChange={(e) => {
-                            handlDataFilter(e)
-                        }} id="deviceSelect" name="action" class="form-select border border-dark p-2" >
-                            <option selected value="all">All</option>
-                            <option value="on">On</option>
-                            <option value="off">Off</option>
-                        </select>
-                    </div>
-                    <div className="col-5">
-                        <input name="datetime" onChange={(e) => { handlDataFilter(e) }} type="text" class="form-control border border-dark p-2" placeholder="Search Datetime" />
-                    </div>
+                            }} id="deviceSelect" name="action" className="form-select border border-dark p-2" >
+                                <option selected value="all">All</option>
+                                <option value="on">On</option>
+                                <option value="off">Off</option>
+                            </select>
+                        </div>
+                        <div className="col-5">
+                            <input name="datetime" onChange={(e) => { handlDataFilter(e) }} type="text" className="form-control border border-dark p-2" placeholder="Search Datetime" />
+                        </div>
 
-                    <div className="col-3">
-                        <button className="btn btn-primary py-2 px-4" onClick={() => {
-                            setDataSearch(dataFilter);
-                        }}>Search</button>
+                        <div className="col-3">
+                            <button className="btn btn-primary py-2 px-4"  type="submit">Search</button>
+                        </div>
                     </div>
-                </div>
-
+                </form>
                 <div className="col mt-2">
                     <small className="text-start d-block">
                         <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>

@@ -109,39 +109,46 @@ const DataSensor = () => {
         <div className="" style={{ background: "#D9E5F6" }}>
             <p className="fw-bold fs-2 ms-5  ">Data Sensor</p>
             <div className="container text-center ">
-                <div className="row">
-                    <div className="col">
-                        <input onChange={(e) => { setTemp2(e.target.value) }} type="text" class="form-control border border-dark p-2" placeholder="Search(ID,Temperature, Humidity, Light or DateTime)" />
-                        <small className="text-start d-block">
-                            <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>
-                            <div>HH:mm:ss dd/MM/yyyy &nbsp; ví dụ: <strong>15:53:48 10/09/2025</strong></div>
-                        </small>
+                <form onSubmit={(e) => {
+                    e.preventDefault(); // chặn reload
+                    setSearchBy(temp1);
+                    setSearchValue(temp2.trim());
+                    setPage(1);
+                }}>
+                    <div className="row">
 
-                        {error && (<>
-                            <p style={{ color: "red" }}>{error} </p>
-                        </>)}
-                    </div>
-                    <div className="col-2 ">
-                        <select onChange={(e) => {
-                            setTemp1(e.target.value);
+                        <div className="col">
 
-                        }} class="form-select border border-dark p-2" aria-label="Default select example">
-                            <option selected value="all">All</option>
-                            <option value="temperature">Temperature</option>
-                            <option value="humidity">Humidity</option>
-                            <option value="light">Light</option>
-                            <option value="created_at">Datetime</option>
-                        </select>
+                            <input onChange={(e) => { setTemp2(e.target.value) }} type="text" class="form-control border border-dark p-2" placeholder="Search(ID,Temperature, Humidity, Light or DateTime)" />
+                            <small className="text-start d-block">
+                                <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>
+                                <div>HH:mm:ss dd/MM/yyyy &nbsp; ví dụ: <strong>15:53:48 10/09/2025</strong></div>
+                            </small>
+
+                            {error && (<>
+                                <p style={{ color: "red" }}>{error} </p>
+                            </>)}
+                        </div>
+                        <div className="col-2 ">
+                            <select onChange={(e) => {
+                                setTemp1(e.target.value);
+
+                            }} class="form-select border border-dark p-2" aria-label="Default select example">
+                                <option selected value="all">All</option>
+                                <option value="temperature">Temperature</option>
+                                <option value="humidity">Humidity</option>
+                                <option value="light">Light</option>
+                                <option value="created_at">Datetime</option>
+                            </select>
+                        </div>
+
+                        <div className="col-3">
+                            <button className="btn btn-primary py-2 px-4 " type="submit">Search</button>
+                        </div>
+
+
                     </div>
-                    
-                    <div className="col-3">
-                        <button className="btn btn-primary py-2 px-4 " onClick={() => {
-                            setSearchBy(temp1);
-                            setSearchValue(temp2.trim());
-                            setPage(1);
-                        }}>Search</button>
-                    </div>
-                </div>
+                </form>
                 <div className="row">
                     <table className="table">
                         <thead className="table-dark">
