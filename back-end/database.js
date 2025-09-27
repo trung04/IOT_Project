@@ -36,7 +36,6 @@ async function getDataSensor(page = 1, sizePage = 10, q1 = null, q2 = null, sort
         + ` OR temperature = ${q2}`
         + ` OR humidity = ${q2}`
         + ` OR light = ${q2}`;
-
     } else {
       query += ` where created_at like '%${q2}%'`;
     }
@@ -80,6 +79,22 @@ async function getLatestDataSensor() {
 
 
 
+// lấy dữ liệu action history mới nhát
+async function getLatestActionHistory() {
+  const query = `
+    SELECT ah.device, ah.action, ah.created_at
+FROM action_history ah
+JOIN (
+    SELECT device, MAX(created_at) AS max_created
+    FROM action_history
+    GROUP BY device
+) latest
+ON ah.device = latest.device AND ah.created_at = latest.max_created;
+
+  `;
+  const [rows] = await pool.query(query);
+  return rows;
+}
 
 //lưu dữ liệu action history
 async function saveActionHistory(data) {
@@ -100,11 +115,11 @@ async function getActionHistory(page = 1, sizePage = 10, device = 'all', action 
   if (device != 'all') {
     query += ` and device like '%${device}%'`;
   }
-  if (action != 'all'){
+  if (action != 'all') {
     query += ` and action like '%${action}%'`;
   }
-  if(datetime!=''){
-     query += ` and created_at like '%${datetime}%'`;
+  if (datetime != '') {
+    query += ` and created_at like '%${datetime}%'`;
   }
 
   let query2 = query + ` ) as data`
@@ -112,7 +127,7 @@ async function getActionHistory(page = 1, sizePage = 10, device = 'all', action 
   query += ` ) as data`;
   //sắp xếp
   query += ` order by ${sortBy}`;
-  if (statusSortBy==='true') {
+  if (statusSortBy === 'true') {
     query += ` desc`;
   }
   const [totalRecord] = await pool.query(query2);
@@ -132,5 +147,6 @@ module.exports = {
   getActionHistory,
   saveDataSensor,
   saveActionHistory,
-  getLatestDataSensor
+  getLatestDataSensor,
+  getLatestActionHistory
 };

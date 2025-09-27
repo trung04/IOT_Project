@@ -43,18 +43,76 @@ const options = {
 };
 
 const Home = () => {
-    //thiết bị
+    //dữ liệu trạng thái thiết bị gửi đi
     const [device, setDevice] = useState([
         { id: 1, device: "fan", status: 0 },
         { id: 2, device: "led", status: 0 },
         { id: 3, device: "ac", status: 0 }
     ]);
+    //dữ liệu trạng thái thiết bị cập nhập theo phần cứng 
+    const [deviceStatus, setDeviceStatus] = useState({
+        fan: false,
+        led: false,
+        ac: false,
+    });
+    //lấy dữ liệu từ backend gửi cho qua socket 
+    useEffect(() => {
+        socket.on('action_history', (data) => {
+
+            console.log(data);
+            setDeviceStatus(prev => ({
+                ...prev,
+                [data.device]: data.status === 1 ? true : false
+            }));
+        });
+        return () => {
+            socket.off('action_history');
+        };
+
+
+    }, []);
+
+    //cập nhập status thiết bị từ database mới nhật khi load lại trang
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                const res = await axios.get("http://localhost:3001/latest-action-history");
+                console.log("dữ liệu cập dc từ data base");
+                console.log(res.data);
+                setDevice(prev =>
+                    prev.map(d => {
+                        const found = res.data.find(item => item.device === d.device);
+                        return found
+                            ? { ...d, status: String(found.action).toLowerCase().trim() === "on" }
+                            : d;
+                    })
+                );
+                setDeviceStatus(prev => ({
+                    ...prev,
+                    ...Object.fromEntries(
+                        res.data.map(d => [d.device, String(d.action).toLowerCase().trim() === "on"])
+                    )
+                }));
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        fetch();
+    }, []);
+
+    useEffect(() => {
+        console.log("device status")
+        console.log(deviceStatus);
+        console.log("device")
+        console.log(device);
+    }, [deviceStatus, device]);
 
     const [dataSensor, setDataSensor] = useState({
         temperature: 0,
         humidity: 0,
         light: 0,
     });
+
 
     const [data, setData] = useState({
         labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
@@ -87,13 +145,15 @@ const Home = () => {
     });
 
 
+
+
+
     //kéo dữ liệu thời gian thực về cho  biếu đồ
     useEffect(() => {
         socket.on('data_sensor', (data) => {
-            console.log(data);
             setDataSensor(data);
             const dataRes = data;
-            console.log(dataRes);
+
             const temperatureData = [];
             const humidityData = [];
             const lightData = [];
@@ -113,7 +173,6 @@ const Home = () => {
                     hour12: false
                 }));
             }
-            console.log(humidityData);
             setData({
                 labels: dateTimeData,
                 datasets: [
@@ -227,8 +286,13 @@ const Home = () => {
             }
         };
         postData();
+        console.log("used device");
+        setDeviceStatus(pre => ({
+            ...pre,
+            [usedDevice.device]: undefined
+        }))
+        console.log(usedDevice);
     }, [usedDevice]);
-
 
     const toggleDevice = (id) => {
         setDevice(prev => {
@@ -274,7 +338,7 @@ const Home = () => {
 
                                     style={{
                                         transformOrigin: "50% 50%",
-                                        animation: device[0].status ? "spin 1s linear infinite" : "",
+                                        animation: deviceStatus.fan ? "spin 1s linear infinite" : "",
                                     }}
                                 >
                                     <style>
@@ -309,16 +373,23 @@ const Home = () => {
                                     </defs>
                                 </svg></div>
                             <div className="col" style={{ scale: '1.5' }}>
-                                <div className="form-check form-switch">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id="fan"
-                                        onChange={() => { toggleDevice(1) }}
 
-                                    />
+                                {deviceStatus.fan === undefined ? (<div className="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>) : (
+                                    <div className="form-check form-switch">
+                                        <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id="fan"
+                                            checked={deviceStatus.fan === true ? true : deviceStatus.fan === false ? false : undefined}
+                                            onChange={() => { toggleDevice(1) }}
 
-                                </div>
+                                        />
+                                    </div>
+                                )}
+
+
                             </div>
                         </div>
                     </div>
@@ -331,10 +402,10 @@ const Home = () => {
                                     width="100"
                                     height="100"
                                     viewBox="0 0 16 16"
-                                    fill={device[1].status ? "#FFD700" : "#6c757d"} // vàng khi bật, xám khi tắt
+                                    fill={deviceStatus.led ? "#FFD700" : "#6c757d"} // vàng khi bật, xám khi tắt
                                     style={{
                                         transition: "fill 0.3s ease",
-                                        filter: device[1].status ? "drop-shadow(0 0 8px #FFD700)" : "none",
+                                        filter: deviceStatus.led ? "drop-shadow(0 0 8px #FFD700)" : "none",
                                         cursor: "pointer",
                                         scale: "0.5"
 
@@ -345,15 +416,23 @@ const Home = () => {
                                 </svg>
                             </div>
                             <div className="col" style={{ scale: '1.5' }}>
-                                <div className="form-check form-switch">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id="led"
-                                        onChange={() => { toggleDevice(2) }}
-                                    />
 
-                                </div>
+                                {deviceStatus.led === undefined ? (<div className="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>) : (
+                                    <div className="form-check form-switch">
+                                        <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id="led"
+                                            checked={deviceStatus.led === true ? true : deviceStatus.led === false ? false : undefined}
+                                            onChange={() => { toggleDevice(2) }}
+
+                                        />
+                                    </div>
+                                )}
+
+
                             </div>
                         </div>
                     </div>
@@ -398,7 +477,7 @@ const Home = () => {
                                     <circle cx="80" cy="50" r="4" fill="#a9d1ff" />
 
                                     {/* Khí lạnh thổi ra khi bật */}
-                                    {device[2].status && (<>
+                                    {deviceStatus.ac && (<>
                                         <path
                                             className="wind1"
                                             d="M30 75 C40 90, 60 90, 70 75"
@@ -462,15 +541,23 @@ const Home = () => {
 
                             </div>
                             <div className="col" style={{ scale: '1.5' }}>
-                                <div className="form-check form-switch">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id="ac"
-                                        onChange={() => { toggleDevice(3) }}
-                                    />
 
-                                </div>
+
+                                {deviceStatus.ac === undefined ? (<div className="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>) : (
+                                    <div className="form-check form-switch">
+                                        <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id="ac"
+                                            checked={deviceStatus.ac === true ? true : deviceStatus.ac === false ? false : undefined}
+                                            onChange={() => { toggleDevice(3) }}
+
+                                        />
+                                    </div>
+                                )}
+
                             </div>
                         </div>
                     </div>
@@ -577,18 +664,18 @@ const Home = () => {
                                         />
                                     </defs>
                                 </svg> */}
-                                 <>
+                                <>
                                     {dataSensor[0]?.humidity <= 30 ? (
-                                        <img width="40" height="40" src="/gif/low-humidity.gif" alt="dim humidity"  className="rounded-circle" />
+                                        <img width="40" height="40" src="/gif/low-humidity.gif" alt="dim humidity" className="rounded-circle" />
                                     ) : dataSensor[0]?.humidity <= 60 ? (
                                         <img width="50" height="40" src="/gif/medium-humidity.gif" alt="normal humidity" className="rounded-circle" />
                                     ) : (
-                                         <img width="50" height="50" src="/gif/hight-humidity.gif" alt="bright humidity" className="rounded-circle" />
+                                        <img width="50" height="50" src="/gif/hight-humidity.gif" alt="bright humidity" className="rounded-circle" />
                                     )}
-                                   
+
                                 </>
-                                
-                                </div>
+
+                            </div>
 
 
                         </div>
@@ -636,13 +723,13 @@ const Home = () => {
 
                                 <>
                                     {dataSensor[0]?.light <= 5 ? (
-                                        <img width="40" height="40" src="/gif/dark.gif" alt="dim light"  className="rounded-circle" />
-                                    ) : dataSensor[0]?.light <= 1000 ? (
+                                        <img width="40" height="40" src="/gif/dark.gif" alt="dim light" className="rounded-circle" />
+                                    ) : dataSensor[0]?.light <= 100 ? (
                                         <img width="50" height="50" src="/gif/look.gif" alt="normal light" className="rounded-circle" />
                                     ) : (
-                                         <img width="50" height="50" src="/gif/too-bright.gif" alt="bright light" className="rounded-circle" />
+                                        <img width="50" height="50" src="/gif/too-bright.gif" alt="bright light" className="rounded-circle" />
                                     )}
-                                   
+
                                 </>
 
 

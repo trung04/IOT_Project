@@ -2,13 +2,13 @@ const express = require('express');
 const mqtt = require("mqtt");
 const brokerUrl = 'mqtts://1b960938869f4e2f93e368cbe2a8504d.s1.eu.hivemq.cloud';
 const optionMQTT = {
-    port: 8883,
-    clientId: 'nodejs_client_' + Math.random().toString(16).substr(2, 8),
-    username: 'trung',
-    password: '123456789aA',
-    rejectUnauthorized: false  // bỏ kiểm tra TLS certificate (tương tự setInsecure trên ESP32)
+  port: 8883,
+  clientId: 'nodejs_client_' + Math.random().toString(16).substr(2, 8),
+  username: 'trung',
+  password: '123456789aA',
+  rejectUnauthorized: false  // bỏ kiểm tra TLS certificate (tương tự setInsecure trên ESP32)
 };
-const client = mqtt.connect(brokerUrl,optionMQTT);
+const client = mqtt.connect(brokerUrl, optionMQTT);
 
 const app = express();
 const port = 3001;
@@ -64,7 +64,7 @@ io.on('connection', async (socket) => {
 
 //sub to topic
 const topicDataSensor = 'data/sensor'
-const topicACtionHistory = 'device/history'
+const topicACtionHistory = 'action/history'
 client.on('connect', () => {
   console.log('Đã kết nối MQTT broker');
   client.subscribe(topicDataSensor, (err) => {
@@ -89,22 +89,27 @@ client.on('message', async (topic, message) => {
     try {
       const data = JSON.parse(message.toString()); // Chuyển buffer -> string -> JSON
       console.log("Dữ liệu JSON nhận được:", data);
-      const insertId = await db.saveDataSensor(data);
-      if (insertId) {
-        console.log("Đã lưu bản ghi vào data sensor id " + insertId);
-      }
+      // const insertId = await db.saveDataSensor(data);
+      // if (insertId) {
+      //   console.log("Đã lưu bản ghi vào data sensor id " + insertId);
+      // }
       // Truy cập dữ liệu
       io.emit('mqtt_message', data);
     } catch (err) {
       console.error("Lỗi khi parse JSON:", err.message);
     }
-  } else if (topic === "device/history") {
+  } else if (topic === "action/history") {
     const data = JSON.parse(message.toString());
     console.log("Dữ liệu JSON nhận được:", data);
     const insertId = await db.saveActionHistory(data);
     if (insertId) {
       console.log("Đã lưu bản ghi vào action history id " + insertId);
     }
+    if (data.device !== null && data.device !== 'null' && data.device !== "null" && typeof data.device !== 'undefined') {
+      io.emit("action_history", data);
+      console.log("dadx gui");
+    }
+
   }
 });
 
@@ -176,7 +181,16 @@ app.get("/action-history", async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
+//lấy data action-history mới nhất
+app.get("/latest-action-history", async (req, res) => {
+  try {
+    const data = await db.getLatestActionHistory();
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

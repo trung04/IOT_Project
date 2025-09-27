@@ -64,6 +64,7 @@ void reconnect() {
 int getDeviceCode(String device) {
   if (device == "led") return 1;
   if (device == "fan") return 2;
+  if (device == "ac") return 3;
   return -1;  // thiết bị không hợp lệ
 }
 
@@ -113,7 +114,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
         }
         break;
 
-      default:
+      case 3:
         if (status == 1) {
           Serial.println("Điều hòa BẬT");
           digitalWrite(AC_PIN, HIGH);
@@ -124,6 +125,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
           Serial.println("Trạng thái điều quạt không hợp lệ");
         }
         break;
+      
     }
     String DeviceStatus = "{";
     DeviceStatus += "\"device\":\"";
@@ -134,7 +136,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     DeviceStatus += "}";
     Serial.print("Gửi MQTT: ");
     Serial.println(DeviceStatus);
-    client.publish("device/history", DeviceStatus.c_str());  // gửi lên topic riêng
+    client.publish("action/history", DeviceStatus.c_str());  // gửi lên topic riêng
   }
 }
 void setup() {
@@ -178,9 +180,9 @@ void loop() {
   DataSensor += "\"light\":";
   DataSensor += String(lux);
   DataSensor += "}";
-  Serial.print("Gửi MQTT: ");
-  Serial.println(DataSensor);
+  // Serial.print("Gửi MQTT: ");
+  // Serial.println(DataSensor);
   //pub dữ liệu lên topic data/sensor
-  client.publish(mqtt_topic, DataSensor.c_str());  // gửi lên topic riêng
+  // client.publish(mqtt_topic, DataSensor.c_str());  // gửi lên topic riêng
   delay(3000);
 }

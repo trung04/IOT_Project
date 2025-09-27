@@ -115,12 +115,13 @@ paths:
           schema:
             type: string
             example: ""
-          description: Ngày giờ lọc dữ liệu (HH:mm:ss dd/MM/yyyy ).
+          description: Ngày giờ lọc dữ liệu (YYYY-MM-DD HH:MM:SS).
         - name: sortBy
           in: query
           required: false
           schema:
             type: string
+            enum: [id,device,action, created_at]
             example: "id"
           description: Trường để sắp xếp.
         - name: statusSortBy

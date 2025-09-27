@@ -133,6 +133,7 @@ const DataSensor = () => {
                             <option value="created_at">Datetime</option>
                         </select>
                     </div>
+                    
                     <div className="col-3">
                         <button className="btn btn-primary py-2 px-4 " onClick={() => {
                             setSearchBy(temp1);
