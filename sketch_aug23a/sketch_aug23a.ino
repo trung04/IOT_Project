@@ -9,9 +9,11 @@ const char* mqtt_server = "1b960938869f4e2f93e368cbe2a8504d.s1.eu.hivemq.cloud";
 const int mqtt_port = 8883;                                                       // giữ nguyên
 const char* mqtt_user = "trung";
 const char* mqtt_password = "123456789aA";
-const char* mqtt_topic = "data/sensor";  // giữ nguyên topic
 
-WiFiClientSecure  espClient;
+const char* mqtt_topic = "data/sensor";  // giữ nguyên topic
+const char* TOPIC_DEVICE = "device";     // chỉ sub topic này
+const char* topic_start = "esp32/start";
+WiFiClientSecure espClient;
 PubSubClient client(espClient);
 // WiFi
 const char* ssid = "Trung";
@@ -26,7 +28,7 @@ const char* password = "21122004@";
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 //TOPIC nhận tín hiệu đèn
-const char* TOPIC_DEVICE = "device";  // chỉ sub topic này
+
 //CDS
 #define CDS_PIN 34
 
@@ -50,6 +52,8 @@ void reconnect() {
     String clientID = "ESP32Client-" + String(random(0xffff), HEX);
     if (client.connect(clientID.c_str(), mqtt_user, mqtt_password)) {  //  client ID riêng
       Serial.println("Thành công!");
+      String begin = "{\"status\" : 1}";
+      client.publish("esp32/start", begin.c_str());
       client.subscribe(TOPIC_DEVICE);
       Serial.println("Đã subcribe topic 'device'");
     } else {
@@ -125,7 +129,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
           Serial.println("Trạng thái điều quạt không hợp lệ");
         }
         break;
-      
     }
     String DeviceStatus = "{";
     DeviceStatus += "\"device\":\"";
@@ -136,17 +139,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
     DeviceStatus += "}";
     Serial.print("Gửi MQTT: ");
     Serial.println(DeviceStatus);
-    client.publish("action/history", DeviceStatus.c_str());  // gửi lên topic riêng
+    if (!doc.containsKey("action")) {
+      client.publish("action/history", DeviceStatus.c_str());  // gửi lên topic riêng
+    }
   }
 }
 void setup() {
   Serial.begin(115200);
   setup_wifi();
   dht.begin();
-  espClient.setInsecure(); // bỏ kiểm tra chứng chỉ TLS
+  espClient.setInsecure();  // bỏ kiểm tra chứng chỉ TLS
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
-  pinMode(LED_PIN, OUTPUT); 
+  pinMode(LED_PIN, OUTPUT);
   pinMode(FAN_PIN, OUTPUT);
   pinMode(AC_PIN, OUTPUT);
 }
@@ -180,8 +185,8 @@ void loop() {
   DataSensor += "\"light\":";
   DataSensor += String(lux);
   DataSensor += "}";
-  // Serial.print("Gửi MQTT: ");
-  // Serial.println(DataSensor);
+  Serial.print("Gửi MQTT: ");
+  Serial.println(DataSensor);
   //pub dữ liệu lên topic data/sensor
   // client.publish(mqtt_topic, DataSensor.c_str());  // gửi lên topic riêng
   delay(3000);

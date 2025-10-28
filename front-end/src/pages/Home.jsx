@@ -1,519 +1,475 @@
 import Header from "../component/Header";
-import { Line } from 'react-chartjs-2';
+import { Line } from "react-chartjs-2";
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import io from 'socket.io-client';
-const socket = io('http://localhost:3001'); // Kết nối tới server
+import io from "socket.io-client";
+const socket = io("http://localhost:3001"); // Kết nối tới server
 
-// const socket = io('http://localhost:3001');
 // biểu đồ
 ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
 );
 
-
 const options = {
-    responsive: true,
-    plugins: {
-        legend: {
-            position: 'top',
-        },
-        title: {
-            display: true,
-            text: 'Monthly Sales Line Chart',
-        },
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "top",
     },
-    maintainAspectRatio: false, // Cho phép tự co dãn
+    title: {
+      display: true,
+      text: "Monthly Sales Line Chart",
+    },
+  },
+  maintainAspectRatio: false, // Cho phép tự co dãn
 };
 
 const Home = () => {
-    //dữ liệu trạng thái thiết bị gửi đi
-    const [device, setDevice] = useState([
-        { id: 1, device: "fan", status: 0 },
-        { id: 2, device: "led", status: 0 },
-        { id: 3, device: "ac", status: 0 }
-    ]);
-    //dữ liệu trạng thái thiết bị cập nhập theo phần cứng 
-    const [deviceStatus, setDeviceStatus] = useState({
-        fan: false,
-        led: false,
-        ac: false,
-    });
-    //lấy dữ liệu từ backend gửi cho qua socket 
-    useEffect(() => {
-        socket.on('action_history', (data) => {
-
-            console.log(data);
-            setDeviceStatus(prev => ({
-                ...prev,
-                [data.device]: data.status === 1 ? true : false
-            }));
-        });
-        return () => {
-            socket.off('action_history');
-        };
-
-
-    }, []);
-
-    //cập nhập status thiết bị từ database mới nhật khi load lại trang
-    useEffect(() => {
-        const fetch = async () => {
-            try {
-                const res = await axios.get("http://localhost:3001/latest-action-history");
-                console.log("dữ liệu cập dc từ data base");
-                console.log(res.data);
-                setDevice(prev =>
-                    prev.map(d => {
-                        const found = res.data.find(item => item.device === d.device);
-                        return found
-                            ? { ...d, status: String(found.action).toLowerCase().trim() === "on" }
-                            : d;
-                    })
-                );
-                setDeviceStatus(prev => ({
-                    ...prev,
-                    ...Object.fromEntries(
-                        res.data.map(d => [d.device, String(d.action).toLowerCase().trim() === "on"])
-                    )
-                }));
-            } catch (e) {
-                console.log(e);
-            }
-        }
-        fetch();
-    }, []);
-
-    useEffect(() => {
-        console.log("device status")
-        console.log(deviceStatus);
-        console.log("device")
-        console.log(device);
-    }, [deviceStatus, device]);
-
-    const [dataSensor, setDataSensor] = useState({
-        temperature: 0,
-        humidity: 0,
-        light: 0,
-    });
-
-
-    const [data, setData] = useState({
-        labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-        datasets: [
-            {
-                label: 'Temperature',
-                data: [65, 59, 80, 81, 56, 55, 40],
-                fill: false,
-                borderColor: 'red',
-                backgroundColor: 'rgba(235, 56, 110, 0.2)',
-                tension: 0.1, // smooth curves
-            },
-            {
-                label: 'Humidity',
-                data: [1, 2, 3, 4, 5, 6, 7],
-                fill: false,
-                borderColor: 'rgba(22, 131, 255, 1)',
-                backgroundColor: 'rgba(56, 195, 223, 0.2)',
-                tension: 0.1, // smooth curves
-            },
-            {
-                label: 'Light',
-                data: [40, 40, 40, 40, 40, 40, 40],
-                fill: false,
-                borderColor: 'rgba(255, 242, 0, 1)',
-                backgroundColor: 'rgba(223, 252, 58, 0.2)',
-                tension: 0.1, // smooth curves
-            },
-        ],
-    });
-
-
-
-
-
-    //kéo dữ liệu thời gian thực về cho  biếu đồ
-    useEffect(() => {
-        socket.on('data_sensor', (data) => {
-            setDataSensor(data);
-            const dataRes = data;
-
-            const temperatureData = [];
-            const humidityData = [];
-            const lightData = [];
-            const dateTimeData = [];
-            for (let i = 8; i >= 0; i--) {
-                temperatureData.push(dataRes[i].temperature);
-                humidityData.push(dataRes[i].humidity);
-                lightData.push(dataRes[i].light);
-                dateTimeData.push(new Date(dataRes[i].created_at).toLocaleString('vi-VN', {
-                    timeZone: 'Asia/Ho_Chi_Minh',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                }));
-            }
-            setData({
-                labels: dateTimeData,
-                datasets: [
-                    {
-                        label: 'Temperature',
-                        data: temperatureData,
-                        fill: false,
-                        borderColor: 'red',
-                        backgroundColor: 'rgba(235, 56, 110, 0.2)',
-                        tension: 0.1, // smooth curves
-                    },
-                    {
-                        label: 'Humidity',
-                        data: humidityData,
-                        fill: false,
-                        borderColor: 'rgba(22, 131, 255, 1)',
-                        backgroundColor: 'rgba(56, 195, 223, 0.2)',
-                        tension: 0.1, // smooth curves
-                    },
-                    {
-                        label: 'Light',
-                        data: lightData,
-                        fill: false,
-                        borderColor: 'rgba(255, 242, 0, 1)',
-                        backgroundColor: 'rgba(223, 252, 58, 0.2)',
-                        tension: 0.1, // smooth curves
-                    },
-                ],
-            })
-        });
-
-        return () => {
-            socket.off('data_sensor');
-        };
-
-
-
-        // const fetch = async () => {
-        //     try {
-        //         const response = await axios.get('http://localhost:3001/latest-data-sensor');
-        //         setDataSensor(response.data);
-        //         const dataRes = response.data;
-        //         console.log(dataRes);
-        //         const temperatureData = [];
-        //         const humidityData = [];
-        //         const lightData = [];
-        //         const dateTimeData = [];
-        //         for (let i = 8; i >= 0; i--) {
-        //             temperatureData.push(dataRes[i].temperature);
-        //             humidityData.push(dataRes[i].humidity);
-        //             lightData.push(dataRes[i].light);
-        //             dateTimeData.push(new Date(dataRes[i].created_at).toLocaleString('vi-VN', {
-        //                 timeZone: 'Asia/Ho_Chi_Minh',
-        //                 year: 'numeric',
-        //                 month: '2-digit',
-        //                 day: '2-digit',
-        //                 hour: '2-digit',
-        //                 minute: '2-digit',
-        //                 second: '2-digit',
-        //                 hour12: false
-        //             }));
-        //         }
-        //         console.log(humidityData);
-        //         setData({
-        //             labels: dateTimeData,
-        //             datasets: [
-        //                 {
-        //                     label: 'Temperature',
-        //                     data: temperatureData,
-        //                     fill: false,
-        //                     borderColor: 'red',
-        //                     backgroundColor: 'rgba(235, 56, 110, 0.2)',
-        //                     tension: 0.1, // smooth curves
-        //                 },
-        //                 {
-        //                     label: 'Humidity',
-        //                     data: humidityData,
-        //                     fill: false,
-        //                     borderColor: 'rgba(22, 131, 255, 1)',
-        //                     backgroundColor: 'rgba(56, 195, 223, 0.2)',
-        //                     tension: 0.1, // smooth curves
-        //                 },
-        //                 {
-        //                     label: 'Light',
-        //                     data: lightData,
-        //                     fill: false,
-        //                     borderColor: 'rgba(255, 242, 0, 1)',
-        //                     backgroundColor: 'rgba(223, 252, 58, 0.2)',
-        //                     tension: 0.1, // smooth curves
-        //                 },
-        //             ],
-        //         })
-        //     } catch (error) {
-        //         console.error('Error posting data:', error);
-        //     }
-        // }
-        // fetch();
-    }, [])
-
-    const [usedDevice, setUsedDevice] = useState([]);
-    //bật tắt thiết bị
-    useEffect(() => {
-
-        const postData = async () => {
-            try {
-                const response = await axios.post('http://localhost:3001/pub-data-device', usedDevice);
-                console.log('Response:', response);
-
-            } catch (error) {
-                console.error('Error posting data:', error);
-            }
-        };
-        postData();
-        console.log("used device");
-        setDeviceStatus(pre => ({
-            ...pre,
-            [usedDevice.device]: undefined
-        }))
-        console.log(usedDevice);
-    }, [usedDevice]);
-
-    const toggleDevice = (id) => {
-        setDevice(prev => {
-            const newDevice = prev.map(dev =>
-                dev.id === id ? { ...dev, status: !dev.status } : dev
-            )
-            setUsedDevice(newDevice.find(item => item.id === id));
-            return newDevice;
-        }
-        );
+  //dữ liệu danh sách các thiết bị
+  const [device, setDevice] = useState([
+    { id: 1, device: "fan", status: 0 },
+    { id: 2, device: "led", status: 0 },
+    { id: 3, device: "ac", status: 0 },
+    { id: 4, device: "random", status: 0 },
+  ]);
+  //dữ liệu lưu trữ thiết bị nào đã được sử dụng
+  const [usedDevice, setUsedDevice] = useState([]);
+  //dữ liệu cảm biến
+  const [dataSensor, setDataSensor] = useState({});
+  //dữ liệu cho đồ thị
+  const [data, setData] = useState({
+    labels: ["January", "February", "March", "April", "May", "June", "July"],
+    datasets: [
+      {
+        label: "Temperature",
+        data: [65, 59, 80, 81, 56, 55, 40],
+        fill: false,
+        borderColor: "red",
+        backgroundColor: "rgba(235, 56, 110, 0.2)",
+        tension: 0.1, // smooth curves
+      },
+      {
+        label: "Humidity",
+        data: [1, 2, 3, 4, 5, 6, 7],
+        fill: false,
+        borderColor: "rgba(22, 131, 255, 1)",
+        backgroundColor: "rgba(56, 195, 223, 0.2)",
+        tension: 0.1, // smooth curves
+      },
+      {
+        label: "Light",
+        data: [40, 40, 40, 40, 40, 40, 40],
+        fill: false,
+        borderColor: "rgba(255, 242, 0, 1)",
+        backgroundColor: "rgba(223, 252, 58, 0.2)",
+        tension: 0.1, // smooth curves
+      },
+    ],
+  });
+  //bật tắt thiết bị
+  const toggleDevice = (id) => {
+    let deviceUsed = device.find((item) => item.id === id);
+    if (deviceUsed) {
+      deviceUsed.status = !deviceUsed.status;
     }
-
-    //giao diện gif
-    const getTemperatureGif = (temp) => {
-        if (temp <= 20) return "/gifs/cold.gif";         // public folder
-
-        else if (temp <= 30) return "/gifs/warm.gif";
-        else if (temp <= 40) return "/gifs/fire.gif";
-        else return "/gifs/high-heat.gif";
+    // cập nhập vào thiết bị nào được sử dụng
+    setUsedDevice(deviceUsed);
+    //đổi trạng thái thiết bị đó trong ds thiết bị là 2 trạng thái chờ
+    setDevice((prev) => {
+      const newDevice = prev.map((dev) =>
+        dev.id === id ? { ...dev, status: undefined } : dev
+      );
+      return newDevice;
+    });
+  };
+  //call api bật tắt thiết bị
+  useEffect(() => {
+    const postData = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:3001/pub-data-device",
+          usedDevice
+        );
+        console.log("Response:", response);
+      } catch (error) {
+        console.error("Error posting data:", error);
+      }
     };
+    postData();
+  }, [usedDevice]);
 
-    return (<>
-        <Header />
+  useEffect(() => {
+    console.log(device);
+  }, [device]);
 
-        <div className="" style={{ background: "#D9E5F6", height: "90vh " }} >
-            <p className="fw-bold fs-2 ms-5  ">Home</p>
-            <div className="container text-center" style={{ overflow: 'hidden' }}>
-                <div className="row mb-2">
-                    <div className="col fw-bold d-flex justify-content-center align-items-center  me-2 fs-3" style={{ background: "#FFFFFF" }}>
-                        DEVICE
+  //lấy dữ liệu từ backend gửi cho qua socket
+  useEffect(() => {
+    socket.on("action_history", (data) => {
+      console.log(data);
+      setDevice((prev) =>
+        prev.map(
+          (item) =>
+            item.device.toLowerCase().trim() === data.device
+              ? { ...item, status: data.status === 1 ? true : false } // cập nhật status
+              : item // giữ nguyên phần tử khác
+        )
+      );
+    });
+    return () => {
+      socket.off("action_history");
+    };
+  }, []);
 
-                    </div>
-                    <div className="col me-2 d-flex justify-content-center align-items-center" style={{ background: "#FFFFFF" }}>
-                        <div className="row d-flex justify-content-center align-items-center" >
-                            <div className="col">
-                                <svg
-                                    width="61"
-                                    height="100"
-                                    viewBox="0 0 31 73"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    xmlnsXlink="http://www.w3.org/1999/xlink"
+  //cập nhập status thiết bị từ database mới nhật khi load lại trang
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:3001/latest-action-history"
+        );
+        console.log("dữ liệu cập dc từ data base");
+        console.log(res.data);
+        setDevice((prev) =>
+          prev.map((d) => {
+            const found = res.data.find((item) => item.device === d.device);
+            return found
+              ? {
+                  ...d,
+                  status: String(found.action).toLowerCase().trim() === "on",
+                }
+              : d;
+          })
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    fetch();
+  }, []);
 
-                                    style={{
-                                        transformOrigin: "50% 50%",
-                                        animation: deviceStatus.fan ? "spin 1s linear infinite" : "",
-                                    }}
-                                >
-                                    <style>
-                                        {`
+  //kéo dữ liệu thời gian thực về cho  biếu đồ
+  useEffect(() => {
+    socket.on("data_sensor", (data) => {
+      setDataSensor(data);
+      const dataRes = data;
+      const temperatureData = [];
+      const humidityData = [];
+      const lightData = [];
+      const dateTimeData = [];
+      for (let i = 8; i >= 0; i--) {
+        temperatureData.push(dataRes[i]?.temperature);
+        humidityData.push(dataRes[i]?.humidity);
+        lightData.push(dataRes[i]?.light);
+        dateTimeData.push(
+          new Date(dataRes[i]?.created_at).toLocaleString("vi-VN", {
+            timeZone: "Asia/Ho_Chi_Minh",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          })
+        );
+      }
+      setData({
+        labels: dateTimeData,
+        datasets: [
+          {
+            label: "Temperature",
+            data: temperatureData,
+            fill: false,
+            borderColor: "red",
+            backgroundColor: "rgba(235, 56, 110, 0.2)",
+            tension: 0.1, // smooth curves
+          },
+          {
+            label: "Humidity",
+            data: humidityData,
+            fill: false,
+            borderColor: "rgba(22, 131, 255, 1)",
+            backgroundColor: "rgba(56, 195, 223, 0.2)",
+            tension: 0.1, // smooth curves
+          },
+          {
+            label: "Light",
+            data: lightData,
+            fill: false,
+            borderColor: "rgba(255, 242, 0, 1)",
+            backgroundColor: "rgba(223, 252, 58, 0.2)",
+            tension: 0.1, // smooth curves
+          },
+        ],
+      });
+    });
+
+    return () => {
+      socket.off("data_sensor");
+    };
+  }, []);
+
+  return (
+    <>
+      <Header />
+
+      <div className="" style={{ background: "#D9E5F6", height: "90vh " }}>
+        {/* <p className="fw-bold ms-5  ">Home</p> */}
+        <div
+          className="container text-center"
+          style={{ overflow: "hidden", scale: "0.85" }}
+        >
+          <div className="row mb-2">
+            <div
+              className="col fw-bold d-flex justify-content-center align-items-center  me-2 fs-3"
+              style={{ background: "#FFFFFF" }}
+            >
+              DEVICE
+            </div>
+            <div
+              className="col me-2 d-flex justify-content-center align-items-center"
+              style={{ background: "#FFFFFF" }}
+            >
+              <div className="row d-flex justify-content-center align-items-center">
+                <div className="col">
+                  <svg
+                    width="61"
+                    height="100"
+                    viewBox="0 0 31 73"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                    style={{
+                      transformOrigin: "50% 50%",
+                      animation: device[0]?.status
+                        ? "spin 1s linear infinite"
+                        : "",
+                    }}
+                  >
+                    <style>
+                      {`
     @keyframes spin {
       100% {
         transform: rotate(360deg);
       }
     }
   `}
-                                    </style>
-                                    <rect width="31" height="73" fill="url(#pattern0_43_860)" />
-                                    <defs>
-                                        <pattern
-                                            id="pattern0_43_860"
-                                            patternContentUnits="objectBoundingBox"
-                                            width="1"
-                                            height="1"
-                                        >
-                                            <use
-                                                xlinkHref="#image0_43_860"
-                                                transform="matrix(0.0111111 0 0 0.00471842 0 0.287671)"
-                                            />
-                                        </pattern>
-                                        <image
-                                            id="image0_43_860"
-                                            width="90"
-                                            height="90"
-                                            preserveAspectRatio="none"
-                                            xlinkHref="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAABaCAYAAAA4qEECAAAACXBIWXMAAAsTAAALEwEAmpwYAAAFNklEQVR4nO2c2W/VRRTHP6aF4ho1MVKNICga/wcftEhijER9MuqbEesWhWqC0ScRF9wwPIiJRjEuVCRaUdlSgxIEQfTFLRIRghtoIehtqULsmKGnSXPz+931N2fOLfNJzktzb+ec7/0tZ86cGUgkEolEIpFIJBKJxHEmA3OBp4HNwC/AEWAI2AN8ACwApo9+PFEv5wNLgT8AV4MdA3qBWbEdbxUmAT3A3zUKXG6DQHfsIKzTCWxrUGBXZotiB2OV84AfCxLZid0bOyhrTAG+KlhkJy/NmbGDs8TSACI7sb7YwVnhMskYQgk9kjKRUV4JKLITe5ATnDPkORpa6I+a8HEGcA+wAtgJ/C4ppL9TDgF7gX5gGXA9cDoGuUFBZAfsbiCXvwXY0cBYfsb6MnAphlimJHSpDp/mAN8VMOZR4BmgAwP0Kwl9rMaayvPySChy7C+BqURmr5LQA1X8OC3wj74LOJeIHFYSelcFH04Gtij48BnQTiRC5s+uhqzjJGC1kg/e5hOJIaUAH8kZv1tRZCcVSV/TUec3pQCvzBj7IslGnLL5TESdnQqB7QfaMsb+NILIY/74PF2VFQqBvZAx7tWRRB6za7WFvjvSY+PzyEIv0Rb6wsAB/ZmRUs2JLLK3T4jA9oABrc4Yb5UBofdF0JmbAwb0WNlYZwP/GBDap7Xq+Fv7WyWhuw2I7KTMGoXZAYo5DnitbJz3DYjcSNm2UJ4NVExqH1edizFBMbeO6ZP4DYGunpLSSo75mscYp0acsTkl8wsCF2Ckx2OVAUFC2ZsY47Ym+u+sWkmKWeaYAXxsQKCibB7GuRzYZECoZuxJWoirgJXAcI3BDUuT+lTpVO2p8l3fi/0q8DiwWKbwA00KfESKZy3JWXIb9lXJjb3I5dyf89mfcurW/m9dUm49UIfAfgL2rhTOJgSTKyyJZS3zd+Z81r94qzEm+qPAWln09Vf8f/L93bI+uRC4GAP4Lp6HgfXSclASZwekR3qdBNOVc5WVk5edeFFrFXpIfrQJgf+V19T5jDsALBfRs5br2+S2z/qufyaX80CFsUpSD+mWx1NL0lNAifIg8J68rPxb/A0p7ld6GfbIVdwpz+daffCfe1sWClqGhU0K7CLbNtmCZ5o7DAjlCrJNVrdqXCJFbjeBrGRxhtdrQBgXyN6RAlh0piv21rlItllKu1HpMSCEGzcNLsmEouj/vSFG59F4PjQgsJN3RMe4nLvWveX1mD8QIBp7DIjsMtbnXg8wxohMqKJgJduYV+bXE4HG+SZWo7mFxdBh4Ewlob3dFEPonw0IvTLDr77AM0h1LKxmd5X51C6bMEOOOU1b6Kcii7wlpyMq9Lh3aQs9N7LQszN8Wq4wrt/brsqkOpd+irT+DH/alPzx25rVeS6CyH/lrNNpPDa8/RpB5+NrdlqbNp3YrTm+LDa477xQFiiK3FvBj/WG9p0HwadUW5WK8lMq+FH0wVh55tPHaPgN5z8EDG4tcEoVHw4qCe0XiqPin9dfBCjmLKmxxqBVG9+IATqkpHi0gIC+Bq4wWOTyJ56ZwTfQvNRg8FuBGxuolGmVbU2ulvsDSa6Tk182ygrIIelaKklOukNmW3c2WUdYpyDyoMR0QvOQgtAvxg7SSuvDSECR/00HGersM2ypRvPQzKyjib0e2z6ROlGL4r6CRf4+9glglllU4OLCObGDsc7tTUxiDsudEe14tVZsjH+rjun5fpnZRj+ZsVWZJvuz18ikaVC2WuyTqqDPKK5JV3AikUgkEolEIpFIMMr/10rhY+fAlawAAAAASUVORK5CYII="
-                                        />
-                                    </defs>
-                                </svg></div>
-                            <div className="col" style={{ scale: '1.5' }}>
-
-                                {deviceStatus.fan === undefined ? (<div className="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                </div>) : (
-                                    <div className="form-check form-switch">
-                                        <input
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            id="fan"
-                                            checked={deviceStatus.fan === true ? true : deviceStatus.fan === false ? false : undefined}
-                                            onChange={() => { toggleDevice(1) }}
-
-                                        />
-                                    </div>
-                                )}
-
-
-                            </div>
-                        </div>
+                    </style>
+                    <rect width="31" height="73" fill="url(#pattern0_43_860)" />
+                    <defs>
+                      <pattern
+                        id="pattern0_43_860"
+                        patternContentUnits="objectBoundingBox"
+                        width="1"
+                        height="1"
+                      >
+                        <use
+                          xlinkHref="#image0_43_860"
+                          transform="matrix(0.0111111 0 0 0.00471842 0 0.287671)"
+                        />
+                      </pattern>
+                      <image
+                        id="image0_43_860"
+                        width="90"
+                        height="90"
+                        preserveAspectRatio="none"
+                        xlinkHref="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFoAAABaCAYAAAA4qEECAAAACXBIWXMAAAsTAAALEwEAmpwYAAAFNklEQVR4nO2c2W/VRRTHP6aF4ho1MVKNICga/wcftEhijER9MuqbEesWhWqC0ScRF9wwPIiJRjEuVCRaUdlSgxIEQfTFLRIRghtoIehtqULsmKGnSXPz+931N2fOLfNJzktzb+ec7/0tZ86cGUgkEolEIpFIJBKJxHEmA3OBp4HNwC/AEWAI2AN8ACwApo9+PFEv5wNLgT8AV4MdA3qBWbEdbxUmAT3A3zUKXG6DQHfsIKzTCWxrUGBXZotiB2OV84AfCxLZid0bOyhrTAG+KlhkJy/NmbGDs8TSACI7sb7YwVnhMskYQgk9kjKRUV4JKLITe5ATnDPkORpa6I+a8HEGcA+wAtgJ/C4ppL9TDgF7gX5gGXA9cDoGuUFBZAfsbiCXvwXY0cBYfsb6MnAphlimJHSpDp/mAN8VMOZR4BmgAwP0Kwl9rMaayvPySChy7C+BqURmr5LQA1X8OC3wj74LOJeIHFYSelcFH04Gtij48BnQTiRC5s+uhqzjJGC1kg/e5hOJIaUAH8kZv1tRZCcVSV/TUec3pQCvzBj7IslGnLL5TESdnQqB7QfaMsb+NILIY/74PF2VFQqBvZAx7tWRRB6za7WFvjvSY+PzyEIv0Rb6wsAB/ZmRUs2JLLK3T4jA9oABrc4Yb5UBofdF0JmbAwb0WNlYZwP/GBDap7Xq+Fv7WyWhuw2I7KTMGoXZAYo5DnitbJz3DYjcSNm2UJ4NVExqH1edizFBMbeO6ZP4DYGunpLSSo75mscYp0acsTkl8wsCF2Ckx2OVAUFC2ZsY47Ym+u+sWkmKWeaYAXxsQKCibB7GuRzYZECoZuxJWoirgJXAcI3BDUuT+lTpVO2p8l3fi/0q8DiwWKbwA00KfESKZy3JWXIb9lXJjb3I5dyf89mfcurW/m9dUm49UIfAfgL2rhTOJgSTKyyJZS3zd+Z81r94qzEm+qPAWln09Vf8f/L93bI+uRC4GAP4Lp6HgfXSclASZwekR3qdBNOVc5WVk5edeFFrFXpIfrQJgf+V19T5jDsALBfRs5br2+S2z/qufyaX80CFsUpSD+mWx1NL0lNAifIg8J68rPxb/A0p7ld6GfbIVdwpz+daffCfe1sWClqGhU0K7CLbNtmCZ5o7DAjlCrJNVrdqXCJFbjeBrGRxhtdrQBgXyN6RAlh0piv21rlItllKu1HpMSCEGzcNLsmEouj/vSFG59F4PjQgsJN3RMe4nLvWveX1mD8QIBp7DIjsMtbnXg8wxohMqKJgJduYV+bXE4HG+SZWo7mFxdBh4Ewlob3dFEPonw0IvTLDr77AM0h1LKxmd5X51C6bMEOOOU1b6Kcii7wlpyMq9Lh3aQs9N7LQszN8Wq4wrt/brsqkOpd+irT+DH/alPzx25rVeS6CyH/lrNNpPDa8/RpB5+NrdlqbNp3YrTm+LDa477xQFiiK3FvBj/WG9p0HwadUW5WK8lMq+FH0wVh55tPHaPgN5z8EDG4tcEoVHw4qCe0XiqPin9dfBCjmLKmxxqBVG9+IATqkpHi0gIC+Bq4wWOTyJ56ZwTfQvNRg8FuBGxuolGmVbU2ulvsDSa6Tk182ygrIIelaKklOukNmW3c2WUdYpyDyoMR0QvOQgtAvxg7SSuvDSECR/00HGersM2ypRvPQzKyjib0e2z6ROlGL4r6CRf4+9glglllU4OLCObGDsc7tTUxiDsudEe14tVZsjH+rjun5fpnZRj+ZsVWZJvuz18ikaVC2WuyTqqDPKK5JV3AikUgkEolEIpFIMMr/10rhY+fAlawAAAAASUVORK5CYII="
+                      />
+                    </defs>
+                  </svg>
+                </div>
+                <div className="col" style={{ scale: "1.5" }}>
+                  {device[0]?.status === undefined ? (
+                    <div
+                      className="spinner-border spinner-border-sm text-primary"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Loading...</span>
                     </div>
-                    <div className="col me-2 d-flex justify-content-center align-items-center" style={{ background: "#FFFFFF" }}>
-                        <div className="row d-flex justify-content-center align-items-center" >
-                            <div className="col text-center">
-
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="100"
-                                    height="100"
-                                    viewBox="0 0 16 16"
-                                    fill={deviceStatus.led ? "#FFD700" : "#6c757d"} // vàng khi bật, xám khi tắt
-                                    style={{
-                                        transition: "fill 0.3s ease",
-                                        filter: deviceStatus.led ? "drop-shadow(0 0 8px #FFD700)" : "none",
-                                        cursor: "pointer",
-                                        scale: "0.5"
-
-                                    }}
-
-                                >
-                                    <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13h-5a.5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m3 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1-.5-.5" />
-                                </svg>
-                            </div>
-                            <div className="col" style={{ scale: '1.5' }}>
-
-                                {deviceStatus.led === undefined ? (<div className="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                </div>) : (
-                                    <div className="form-check form-switch">
-                                        <input
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            id="led"
-                                            checked={deviceStatus.led === true ? true : deviceStatus.led === false ? false : undefined}
-                                            onChange={() => { toggleDevice(2) }}
-
-                                        />
-                                    </div>
-                                )}
-
-
-                            </div>
-                        </div>
+                  ) : (
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="fan"
+                        checked={
+                          device[0]?.status === true
+                            ? true
+                            : device[0]?.status === false
+                            ? false
+                            : undefined
+                        }
+                        onChange={() => {
+                          toggleDevice(1);
+                        }}
+                      />
                     </div>
-                    <div className="col me-2 d-flex justify-content-center align-items-center" style={{ background: "#FFFFFF" }}>
-                        <div className="row d-flex justify-content-center align-items-center" >
-                            <div className="col">
-                                <svg
-                                    width="100"
-                                    height="120"
-                                    viewBox="0 0 100 120"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    {/* Thân máy điều hòa */}
-                                    <rect
-                                        x="10"
-                                        y="20"
-                                        width="80"
-                                        height="50"
-                                        rx="12"
-                                        ry="12"
-                                        fill="#d0e8ff"
-                                        stroke="#3a8ee6"
-                                        strokeWidth="3"
-                                        filter="url(#shadow)"
-                                    />
-                                    {/* Lưới tản nhiệt */}
-                                    {[...Array(7)].map((_, i) => (
-                                        <line
-                                            key={i}
-                                            x1={20 + i * 10}
-                                            y1="40"
-                                            x2={20 + i * 10}
-                                            y2="65"
-                                            stroke="#3a8ee6"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                        />
-                                    ))}
-                                    {/* Núm điều khiển */}
-                                    <circle cx="80" cy="50" r="7" fill="#3a8ee6" />
-                                    <circle cx="80" cy="50" r="4" fill="#a9d1ff" />
+                  )}
+                </div>
+              </div>
+            </div>
+            <div
+              className="col me-2 d-flex justify-content-center align-items-center"
+              style={{ background: "#FFFFFF" }}
+            >
+              <div className="row d-flex justify-content-center align-items-center">
+                <div className="col text-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="100"
+                    height="100"
+                    viewBox="0 0 16 16"
+                    fill={device[1]?.status ? "#FFD700" : "#6c757d"} // vàng khi bật, xám khi tắt
+                    style={{
+                      transition: "fill 0.3s ease",
+                      filter: device[1]?.status
+                        ? "drop-shadow(0 0 8px #FFD700)"
+                        : "none",
+                      cursor: "pointer",
+                      scale: "0.5",
+                    }}
+                  >
+                    <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13h-5a.5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m3 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1-.5-.5" />
+                  </svg>
+                </div>
+                <div className="col" style={{ scale: "1.5" }}>
+                  {device[1]?.status === undefined ? (
+                    <div
+                      className="spinner-border spinner-border-sm text-primary"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  ) : (
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="led"
+                        checked={
+                          device[1]?.status === true
+                            ? true
+                            : device[1]?.status === false
+                            ? false
+                            : undefined
+                        }
+                        onChange={() => {
+                          toggleDevice(2);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div
+              className="col me-2 d-flex justify-content-center align-items-center"
+              style={{ background: "#FFFFFF" }}
+            >
+              <div className="row d-flex justify-content-center align-items-center">
+                <div className="col">
+                  <svg
+                    width="100"
+                    height="120"
+                    viewBox="0 0 100 120"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {/* Thân máy điều hòa */}
+                    <rect
+                      x="10"
+                      y="20"
+                      width="80"
+                      height="50"
+                      rx="12"
+                      ry="12"
+                      fill="#d0e8ff"
+                      stroke="#3a8ee6"
+                      strokeWidth="3"
+                      filter="url(#shadow)"
+                    />
+                    {/* Lưới tản nhiệt */}
+                    {[...Array(7)].map((_, i) => (
+                      <line
+                        key={i}
+                        x1={20 + i * 10}
+                        y1="40"
+                        x2={20 + i * 10}
+                        y2="65"
+                        stroke="#3a8ee6"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    ))}
+                    {/* Núm điều khiển */}
+                    <circle cx="80" cy="50" r="7" fill="#3a8ee6" />
+                    <circle cx="80" cy="50" r="4" fill="#a9d1ff" />
 
-                                    {/* Khí lạnh thổi ra khi bật */}
-                                    {deviceStatus.ac && (<>
-                                        <path
-                                            className="wind1"
-                                            d="M30 75 C40 90, 60 90, 70 75"
-                                            stroke="#5EDB3F"
-                                            strokeWidth="4"
-                                            fill="none"
-                                            strokeLinecap="round"
-                                        />
-                                        <path
-                                            className="wind2"
-                                            d="M35 85 C45 100, 55 100, 65 85"
-                                            stroke="#5EDB3F"
-                                            strokeWidth="4"
-                                            fill="none"
-                                            strokeLinecap="round"
-                                        />
-                                        <path
-                                            className="wind3"
-                                            d="M40 95 C50 110, 50 110, 60 95"
-                                            stroke="#5EDB3F"
-                                            strokeWidth="4"
-                                            fill="none"
-                                            strokeLinecap="round"
-                                        />
+                    {/* Khí lạnh thổi ra khi bật */}
+                    {device[2]?.status && (
+                      <>
+                        <path
+                          className="wind1"
+                          d="M30 75 C40 90, 60 90, 70 75"
+                          stroke="#5EDB3F"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          className="wind2"
+                          d="M35 85 C45 100, 55 100, 65 85"
+                          stroke="#5EDB3F"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          className="wind3"
+                          d="M40 95 C50 110, 50 110, 60 95"
+                          stroke="#5EDB3F"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                      </>
+                    )}
 
-                                    </>)}
+                    <defs>
+                      <filter
+                        id="shadow"
+                        x="-10"
+                        y="-10"
+                        width="120"
+                        height="120"
+                      >
+                        <feDropShadow
+                          dx="0"
+                          dy="4"
+                          stdDeviation="3"
+                          floodColor="#3a8ee6"
+                          floodOpacity="0.3"
+                        />
+                      </filter>
+                    </defs>
 
-
-
-                                    <defs>
-                                        <filter id="shadow" x="-10" y="-10" width="120" height="120" >
-                                            <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#3a8ee6" floodOpacity="0.3" />
-                                        </filter>
-                                    </defs>
-
-                                    <style>{`
+                    <style>{`
       .wind1, .wind2, .wind3 {
         stroke-dasharray: 80;
         stroke-dashoffset: 80;
@@ -536,48 +492,71 @@ const Home = () => {
         }
       }
     `}</style>
-                                </svg>
-
-
-                            </div>
-                            <div className="col" style={{ scale: '1.5' }}>
-
-
-                                {deviceStatus.ac === undefined ? (<div className="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span className="visually-hidden">Loading...</span>
-                                </div>) : (
-                                    <div className="form-check form-switch">
-                                        <input
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            id="ac"
-                                            checked={deviceStatus.ac === true ? true : deviceStatus.ac === false ? false : undefined}
-                                            onChange={() => { toggleDevice(3) }}
-
-                                        />
-                                    </div>
-                                )}
-
-                            </div>
-                        </div>
-                    </div>
+                  </svg>
                 </div>
-                <div className="row mb-2">
-                    <div className="col fw-bold d-flex justify-content-center align-items-center  me-2   fs-3" style={{ background: "#FFFFFF" }}>
-                        DATA
+                <div className="col" style={{ scale: "1.5" }}>
+                  {device[2]?.status === undefined ? (
+                    <div
+                      className="spinner-border spinner-border-sm text-primary"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Loading...</span>
                     </div>
-                    <div className="col me-2 d-flex align-items-center justify-content-center " style={{ background: "#FFFFFF", width: 'auto', height: "auto", minHeight: "150px" }}>
-                        <div className="row  ">
-                            <div className="col ">
-                                <div className="row fw-bold">
-                                    <small>Temperature</small>
-                                </div>
-                                <div className="row fw-bold fs-2 text-center">
-                                    <div className="col">{dataSensor[0]?.temperature}&deg;C</div>
-                                </div>
-                            </div>
-                            <div className="col d-flex align-items-center justify-content-center" style={{ scale: '2' }}>
-                                {/* <svg
+                  ) : (
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="ac"
+                        checked={
+                          device[2]?.status === true
+                            ? true
+                            : device[2]?.status === false
+                            ? false
+                            : undefined
+                        }
+                        onChange={() => {
+                          toggleDevice(3);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="row mb-2">
+            <div
+              className="col fw-bold d-flex justify-content-center align-items-center  me-2   fs-3"
+              style={{ background: "#FFFFFF" }}
+            >
+              DATA
+            </div>
+            <div
+              className="col me-2 d-flex align-items-center justify-content-center "
+              style={{
+                background: "#FFFFFF",
+                width: "auto",
+                height: "auto",
+                minHeight: "150px",
+              }}
+            >
+              <div className="row  ">
+                <div className="col ">
+                  <div className="row fw-bold">
+                    <small>Temperature</small>
+                  </div>
+                  <div className="row fw-bold fs-2 text-center">
+                    <div className="col">
+                      {dataSensor[0]?.temperature}&deg;C
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className="col d-flex align-items-center justify-content-center"
+                  style={{ scale: "2" }}
+                >
+                  {/* <svg
                                 width="25"
                                 height="73"
                                 viewBox="0 0 24 73"
@@ -607,35 +586,56 @@ const Home = () => {
                                     />
                                 </defs>
                             </svg> */}
-                                <>
-                                    {dataSensor[0]?.temperature <= 20 ? (
-                                        <img height="40" width="40" src="/gif/cold.gif" alt="cool" />
-                                    ) : dataSensor[0]?.temperature <= 30 ? (
-                                        <img height="50" width="50" src="/gif/beach-vacation.gif" alt="warm" />
-                                    ) : (
-                                        <img height="40" width="40" src="/gif/high-heat.gif" alt="hot" />
-                                    )}
-                                </>
-
-
-
-                            </div>
-
-
-                        </div>
-                    </div>
-                    <div className="col me-2 d-flex align-items-center justify-content-center " style={{ background: "#FFFFFF", width: 'auto', height: "auto", minHeight: "150px" }}>
-                        <div className="row  ">
-                            <div className="col ">
-                                <div className="row fw-bold">
-                                    <small>Humidity</small>
-                                </div>
-                                <div className="row fw-bold fs-2 text-center">
-                                    <div className="col">{dataSensor[0]?.humidity}%</div>
-                                </div>
-                            </div>
-                            <div className="col d-flex align-items-center" style={{ scale: '2' }}>
-                                {/* <svg
+                  <>
+                    {dataSensor[0]?.temperature <= 20 ? (
+                      <img
+                        height="40"
+                        width="40"
+                        src="/gif/cold.gif"
+                        alt="cool"
+                      />
+                    ) : dataSensor[0]?.temperature <= 30 ? (
+                      <img
+                        height="50"
+                        width="50"
+                        src="/gif/beach-vacation.gif"
+                        alt="warm"
+                      />
+                    ) : (
+                      <img
+                        height="40"
+                        width="40"
+                        src="/gif/high-heat.gif"
+                        alt="hot"
+                      />
+                    )}
+                  </>
+                </div>
+              </div>
+            </div>
+            <div
+              className="col me-2 d-flex align-items-center justify-content-center "
+              style={{
+                background: "#FFFFFF",
+                width: "auto",
+                height: "auto",
+                minHeight: "150px",
+              }}
+            >
+              <div className="row  ">
+                <div className="col ">
+                  <div className="row fw-bold">
+                    <small>Humidity</small>
+                  </div>
+                  <div className="row fw-bold fs-2 text-center">
+                    <div className="col">{dataSensor[0]?.humidity}%</div>
+                  </div>
+                </div>
+                <div
+                  className="col d-flex align-items-center"
+                  style={{ scale: "2" }}
+                >
+                  {/* <svg
                                     width="25"
                                     height="73"
                                     viewBox="0 0 25 73"
@@ -664,34 +664,59 @@ const Home = () => {
                                         />
                                     </defs>
                                 </svg> */}
-                                <>
-                                    {dataSensor[0]?.humidity <= 30 ? (
-                                        <img width="40" height="40" src="/gif/low-humidity.gif" alt="dim humidity" className="rounded-circle" />
-                                    ) : dataSensor[0]?.humidity <= 60 ? (
-                                        <img width="50" height="40" src="/gif/medium-humidity.gif" alt="normal humidity" className="rounded-circle" />
-                                    ) : (
-                                        <img width="50" height="50" src="/gif/hight-humidity.gif" alt="bright humidity" className="rounded-circle" />
-                                    )}
-
-                                </>
-
-                            </div>
-
-
-                        </div>
-                    </div>
-                    <div className="col me-2 d-flex align-items-center justify-content-center " style={{ background: "#FFFFFF", width: 'auto', height: "auto", minHeight: "150px" }}>
-                        <div className="row  ">
-                            <div className="col ">
-                                <div className="row fw-bold">
-                                    <small>Light(lux)</small>
-                                </div>
-                                <div className="row fw-bold text-center">
-                                    <div className="col fs-2">{dataSensor[0]?.light}L</div>
-                                </div>
-                            </div>
-                            <div className="col d-flex align-items-center" style={{ scale: '2' }}>
-                                {/* <svg
+                  <>
+                    {dataSensor[0]?.humidity <= 30 ? (
+                      <img
+                        width="40"
+                        height="40"
+                        src="/gif/low-humidity.gif"
+                        alt="dim humidity"
+                        className="rounded-circle"
+                      />
+                    ) : dataSensor[0]?.humidity <= 60 ? (
+                      <img
+                        width="50"
+                        height="40"
+                        src="/gif/medium-humidity.gif"
+                        alt="normal humidity"
+                        className="rounded-circle"
+                      />
+                    ) : (
+                      <img
+                        width="50"
+                        height="50"
+                        src="/gif/hight-humidity.gif"
+                        alt="bright humidity"
+                        className="rounded-circle"
+                      />
+                    )}
+                  </>
+                </div>
+              </div>
+            </div>
+            <div
+              className="col me-2 d-flex align-items-center justify-content-center "
+              style={{
+                background: "#FFFFFF",
+                width: "auto",
+                height: "auto",
+                minHeight: "150px",
+              }}
+            >
+              <div className="row  ">
+                <div className="col ">
+                  <div className="row fw-bold">
+                    <small>Light(lux)</small>
+                  </div>
+                  <div className="row fw-bold text-center">
+                    <div className="col fs-2">{dataSensor[0]?.light}L</div>
+                  </div>
+                </div>
+                <div
+                  className="col d-flex align-items-center"
+                  style={{ scale: "2" }}
+                >
+                  {/* <svg
                                     width="31"
                                     height="73"
                                     viewBox="0 0 31 73"
@@ -721,35 +746,55 @@ const Home = () => {
                                     </defs>
                                 </svg> */}
 
-                                <>
-                                    {dataSensor[0]?.light <= 5 ? (
-                                        <img width="40" height="40" src="/gif/dark.gif" alt="dim light" className="rounded-circle" />
-                                    ) : dataSensor[0]?.light <= 100 ? (
-                                        <img width="50" height="50" src="/gif/look.gif" alt="normal light" className="rounded-circle" />
-                                    ) : (
-                                        <img width="50" height="50" src="/gif/too-bright.gif" alt="bright light" className="rounded-circle" />
-                                    )}
-
-                                </>
-
-
-                            </div>
-
-
-                        </div>
-                    </div>
-
+                  <>
+                    {dataSensor[0]?.light <= 5 ? (
+                      <img
+                        width="40"
+                        height="40"
+                        src="/gif/dark.gif"
+                        alt="dim light"
+                        className="rounded-circle"
+                      />
+                    ) : dataSensor[0]?.light <= 100 ? (
+                      <img
+                        width="50"
+                        height="50"
+                        src="/gif/look.gif"
+                        alt="normal light"
+                        className="rounded-circle"
+                      />
+                    ) : (
+                      <img
+                        width="50"
+                        height="50"
+                        src="/gif/too-bright.gif"
+                        alt="bright light"
+                        className="rounded-circle"
+                      />
+                    )}
+                  </>
                 </div>
-                <div className="row" style={{ width: "101.3%", height: "43vh" }} >
-                    <Line options={options} data={data} style={{ backgroundColor: '#FFFFFF' }} />
-                </div>
-
-
+              </div>
             </div>
+          </div>
+
+          <div className="row" style={{ width: "101.3%", height: "43vh" }}>
+            <Line
+              options={options}
+              data={data}
+              style={{ backgroundColor: "#FFFFFF" }}
+            />
+            {/* <div className="col">
+              <Line
+                options={options}
+                data={data}
+                style={{ backgroundColor: "#FFFFFF" }}
+              />
+            </div> */}
+          </div>
         </div>
-
-
-
-    </>);
-}
+      </div>
+    </>
+  );
+};
 export default Home;
