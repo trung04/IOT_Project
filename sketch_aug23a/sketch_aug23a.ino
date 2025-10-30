@@ -22,6 +22,7 @@ const char* password = "21122004@";
 #define LED_PIN 14  //GPOP14
 #define FAN_PIN 13  // GPI13
 #define AC_PIN 27
+#define RD_PIN 2
 
 // DHT22
 #define DHTPIN 5  // GPIO12
@@ -69,6 +70,7 @@ int getDeviceCode(String device) {
   if (device == "led") return 1;
   if (device == "fan") return 2;
   if (device == "ac") return 3;
+  if (device =="rd") return 4;
   return -1;  // thiết bị không hợp lệ
 }
 
@@ -126,7 +128,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
           digitalWrite(AC_PIN, LOW);
           Serial.println("Điều hòa ta TẮT");
         } else {
-          Serial.println("Trạng thái điều quạt không hợp lệ");
+          Serial.println("Trạng thái điều hòa không hợp lệ");
+        }
+        break;
+      case 4:
+        if (status == 1) {
+          Serial.println("RD bật");
+          digitalWrite(RD_PIN, HIGH);
+        } else if (status == 0) {
+          digitalWrite(RD_PIN, LOW);
+          Serial.println("RD TẮT");
+        } else {
+          Serial.println("Trạng thái RD không hợp lệ");
         }
         break;
     }
@@ -154,6 +167,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(FAN_PIN, OUTPUT);
   pinMode(AC_PIN, OUTPUT);
+  pinMode(RD_PIN, OUTPUT);
 }
 
 void loop() {
@@ -163,6 +177,7 @@ void loop() {
   client.loop();
   float h = dht.readHumidity();
   float t = dht.readTemperature();
+  float rd = random(10, 50);
 
   if (isnan(h) || isnan(t)) {
     Serial.println("Lỗi đọc DHT22!");
@@ -184,10 +199,13 @@ void loop() {
   DataSensor += ",";
   DataSensor += "\"light\":";
   DataSensor += String(lux);
+  DataSensor +=",";
+   DataSensor += "\"rd\":";
+   DataSensor += String(rd);
   DataSensor += "}";
   Serial.print("Gửi MQTT: ");
   Serial.println(DataSensor);
   //pub dữ liệu lên topic data/sensor
-  // client.publish(mqtt_topic, DataSensor.c_str());  // gửi lên topic riêng
+  client.publish(mqtt_topic, DataSensor.c_str());  // gửi lên topic riêng
   delay(3000);
 }

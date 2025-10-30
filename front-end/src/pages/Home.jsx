@@ -34,7 +34,7 @@ const options = {
     },
     title: {
       display: true,
-      text: "Monthly Sales Line Chart",
+      text: "Data Sensor",
     },
   },
   maintainAspectRatio: false, // Cho phép tự co dãn
@@ -46,14 +46,45 @@ const Home = () => {
     { id: 1, device: "fan", status: 0 },
     { id: 2, device: "led", status: 0 },
     { id: 3, device: "ac", status: 0 },
-    { id: 4, device: "random", status: 0 },
+    { id: 4, device: "rd", status: 0 },
   ]);
   //dữ liệu lưu trữ thiết bị nào đã được sử dụng
   const [usedDevice, setUsedDevice] = useState([]);
   //dữ liệu cảm biến
   const [dataSensor, setDataSensor] = useState({});
-  //dữ liệu cho đồ thị
+  //dữ liệu cho đồ thị  một
   const [data, setData] = useState({
+    labels: ["January", "February", "March", "April", "May", "June", "July"],
+    datasets: [
+      {
+        label: "Temperature",
+        data: [65, 59, 80, 81, 56, 55, 40],
+        fill: false,
+        borderColor: "red",
+        backgroundColor: "rgba(235, 56, 110, 0.2)",
+        tension: 0.1, // smooth curves
+      },
+      {
+        label: "Humidity",
+        data: [1, 2, 3, 4, 5, 6, 7],
+        fill: false,
+        borderColor: "rgba(22, 131, 255, 1)",
+        backgroundColor: "rgba(56, 195, 223, 0.2)",
+        tension: 0.1, // smooth curves
+      },
+      {
+        label: "Light",
+        data: [40, 40, 40, 40, 40, 40, 40],
+        fill: false,
+        borderColor: "rgba(255, 242, 0, 1)",
+        backgroundColor: "rgba(223, 252, 58, 0.2)",
+        tension: 0.1, // smooth curves
+      },
+    ],
+  });
+
+  //dữ liệu cho đồ thị2
+  const [data2, setData2] = useState({
     labels: ["January", "February", "March", "April", "May", "June", "July"],
     datasets: [
       {
@@ -171,11 +202,14 @@ const Home = () => {
       const temperatureData = [];
       const humidityData = [];
       const lightData = [];
+      const rdData = [];
       const dateTimeData = [];
+
       for (let i = 8; i >= 0; i--) {
         temperatureData.push(dataRes[i]?.temperature);
         humidityData.push(dataRes[i]?.humidity);
         lightData.push(dataRes[i]?.light);
+        rdData.push(dataRes[i]?.rd);
         dateTimeData.push(
           new Date(dataRes[i]?.created_at).toLocaleString("vi-VN", {
             timeZone: "Asia/Ho_Chi_Minh",
@@ -218,6 +252,19 @@ const Home = () => {
           },
         ],
       });
+      setData2({
+        labels: dateTimeData,
+        datasets: [
+          {
+            label: "rd",
+            data: rdData,
+            fill: false,
+            borderColor: "red",
+            backgroundColor: "rgba(235, 56, 110, 0.2)",
+            tension: 0.1, // smooth curves
+          },
+        ],
+      });
     });
 
     return () => {
@@ -243,6 +290,7 @@ const Home = () => {
               DEVICE
             </div>
             <div
+              id="fan-control"
               className="col me-2 d-flex justify-content-center align-items-center"
               style={{ background: "#FFFFFF" }}
             >
@@ -325,6 +373,7 @@ const Home = () => {
               </div>
             </div>
             <div
+              id="led-control"
               className="col me-2 d-flex justify-content-center align-items-center"
               style={{ background: "#FFFFFF" }}
             >
@@ -379,6 +428,7 @@ const Home = () => {
               </div>
             </div>
             <div
+              id="ac-control"
               className="col me-2 d-flex justify-content-center align-items-center"
               style={{ background: "#FFFFFF" }}
             >
@@ -517,6 +567,43 @@ const Home = () => {
                         }
                         onChange={() => {
                           toggleDevice(3);
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div
+              id="rd-control"
+              className="col me-2 d-flex justify-content-center align-items-center"
+              style={{ background: "#FFFFFF" }}
+            >
+              <div className="row d-flex justify-content-center align-items-center">
+                <div className="col">{/* hình ảnh của thiết bị rd */}</div>
+                <div className="col" style={{ scale: "1.5" }}>
+                  {device[3]?.status === undefined ? (
+                    <div
+                      className="spinner-border spinner-border-sm text-primary"
+                      role="status"
+                    >
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  ) : (
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="ac"
+                        checked={
+                          device[3]?.status === true
+                            ? true
+                            : device[3]?.status === false
+                            ? false
+                            : undefined
+                        }
+                        onChange={() => {
+                          toggleDevice(4);
                         }}
                       />
                     </div>
@@ -776,21 +863,76 @@ const Home = () => {
                 </div>
               </div>
             </div>
+            <div
+              className="col me-2 d-flex align-items-center justify-content-center "
+              style={{
+                background: "#FFFFFF",
+                width: "auto",
+                height: "auto",
+                minHeight: "150px",
+              }}
+            >
+              <div className="row  ">
+                <div className="col ">
+                  <div className="row fw-bold">
+                    <small>Rd</small>
+                  </div>
+                  <div className="row fw-bold text-center">
+                    <div className="col fs-2">{dataSensor[0]?.rd}L</div>
+                  </div>
+                </div>
+                <div
+                  className="col d-flex align-items-center"
+                  style={{ scale: "2" }}
+                >
+                  {/* <>
+                    {dataSensor[0]?.light <= 5 ? (
+                      <img
+                        width="40"
+                        height="40"
+                        src="/gif/dark.gif"
+                        alt="dim light"
+                        className="rounded-circle"
+                      />
+                    ) : dataSensor[0]?.light <= 100 ? (
+                      <img
+                        width="50"
+                        height="50"
+                        src="/gif/look.gif"
+                        alt="normal light"
+                        className="rounded-circle"
+                      />
+                    ) : (
+                      <img
+                        width="50"
+                        height="50"
+                        src="/gif/too-bright.gif"
+                        alt="bright light"
+                        className="rounded-circle"
+                      />
+                    )}
+                  </> */}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="row" style={{ width: "101.3%", height: "43vh" }}>
-            <Line
-              options={options}
-              data={data}
-              style={{ backgroundColor: "#FFFFFF" }}
-            />
-            {/* <div className="col">
+            <div className="col-6">
               <Line
                 options={options}
                 data={data}
                 style={{ backgroundColor: "#FFFFFF" }}
               />
-            </div> */}
+            </div>
+
+            <div className="col-6">
+              <Line
+                options={options}
+                data={data2}
+                style={{ backgroundColor: "#FFFFFF" }}
+              />
+            </div>
           </div>
         </div>
       </div>

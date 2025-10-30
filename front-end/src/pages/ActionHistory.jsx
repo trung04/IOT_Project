@@ -4,10 +4,9 @@ import axios from "axios";
 import Stack from "@mui/material/Stack";
 import Pagination from "@mui/material/Pagination";
 
-import { parse, format, isValid } from "date-fns";
-
 const ActionHistory = () => {
   const [dataActionHistory, setDataActionHistory] = useState([]);
+  //lưu trữ tổng số bản ghi để phân trang
   const [number, setNumber] = useState(1);
   const [dataFilter, setDataFilter] = useState({
     device: "all",
@@ -19,7 +18,14 @@ const ActionHistory = () => {
     action: "all",
     datetime: "",
   });
-  const handlDataFilter = (e) => {
+  //lưu trữ trang hiện tại
+  const [page, setPage] = useState(1);
+  //lưu trữ sắp xếp theo trường dữ liệu nào
+  const [sortBy, setSortBy] = useState({
+    name: "id",
+    status: true,
+  });
+  const handleDataFilter = (e) => {
     const { name, value } = e.target;
     setDataFilter((prev) => ({
       ...prev,
@@ -27,7 +33,6 @@ const ActionHistory = () => {
     }));
   };
 
-  const [page, setPage] = useState(1);
   const handlePage = (page) => {
     setPage(page);
     setSortBy({
@@ -35,10 +40,7 @@ const ActionHistory = () => {
       status: true,
     });
   };
-  const [sortBy, setSortBy] = useState({
-    name: "id",
-    status: true,
-  });
+
   const handleSortBy = (name) => {
     if (sortBy.name === name) {
       setSortBy((pre) => ({
@@ -55,6 +57,7 @@ const ActionHistory = () => {
 
   useEffect(() => {
     const fetch = async () => {
+      //hàm xử lý về đúng định dạng ngày với database
       let searchDate = "";
       const words = dataSearch.datetime.trim().split(" ");
       if (words.length == 2) {
@@ -100,6 +103,7 @@ const ActionHistory = () => {
           <form
             onSubmit={(e) => {
               e.preventDefault(); // chặn reload
+              setPage(1);
               setDataSearch(dataFilter);
             }}
           >
@@ -117,7 +121,7 @@ const ActionHistory = () => {
                   id="deviceSelect"
                   className="form-select border border-dark p-2"
                   onChange={(e) => {
-                    handlDataFilter(e);
+                    handleDataFilter(e);
                   }}
                 >
                   <option selected value="all">
@@ -126,6 +130,7 @@ const ActionHistory = () => {
                   <option value="led">Led</option>
                   <option value="fan">Fan</option>
                   <option value="ac">AC(Air Conditioner)</option>
+                  <option value="rd">RD</option>
                 </select>
               </div>
               {/* lọc theo hành động */}
@@ -138,7 +143,7 @@ const ActionHistory = () => {
                 </label>
                 <select
                   onChange={(e) => {
-                    handlDataFilter(e);
+                    handleDataFilter(e);
                   }}
                   id="deviceSelect"
                   name="action"
@@ -155,7 +160,7 @@ const ActionHistory = () => {
                 <input
                   name="datetime"
                   onChange={(e) => {
-                    handlDataFilter(e);
+                    handleDataFilter(e);
                   }}
                   type="text"
                   className="form-control border border-dark p-2"
