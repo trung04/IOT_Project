@@ -14,13 +14,31 @@ const { parse, isValid } = require("date-fns");
 //saveDataSensor, getDataSensor, getLatestDataSensor
 //saveActionHistory, getActionHistory, getLatestActionHistory
 
+async function saveThreshold(data) {
+  const query = `INSERT INTO over_threshold(name) VALUES (?)`;
+  const [result] = await pool.execute(query, [
+    data.name,
+  ]);
+  return result.insertId;
+}
+
+async function getNumberThresholddata() {
+  const query = `
+    SELECT COUNT(*) AS count_today
+    FROM over_threshold
+    WHERE DATE(created_at) = CURDATE()
+  `;
+  const [rows] = await pool.execute(query);
+  return rows[0].count_today;
+}
+
 async function saveDataSensor(data) {
-  const query = `INSERT INTO data_sensor (temperature, humidity, light,rd) VALUES (?, ?, ?,?)`;
+  const query = `INSERT INTO data_sensor (temperature, humidity, light,dust) VALUES (?, ?, ?,?)`;
   const [result] = await pool.execute(query, [
     data.temperature,
     data.humidity,
     data.light,
-    data.rd,
+    data.dust
   ]);
   return result.insertId;
 }
@@ -43,7 +61,7 @@ async function getDataSensor(
 
     if (column === "all") {
       query += isNumber
-        ? ` WHERE id = ${searchValue} OR temperature = ${searchValue} OR humidity = ${searchValue} OR light = ${searchValue} OR rd =  ${searchValue}`
+        ? ` WHERE id = ${searchValue} OR temperature = ${searchValue} OR humidity = ${searchValue} OR light = ${searchValue} OR dust = ${searchValue} `
         : ` WHERE created_at LIKE '%${searchValue}%'`;
     } else {
       //nếu là cột created_at thì tìm gần đúng, cột khác thì tìm chính xác
@@ -165,4 +183,6 @@ module.exports = {
   saveActionHistory,
   getLatestDataSensor,
   getLatestActionHistory,
+  saveThreshold,
+  getNumberThresholddata
 };

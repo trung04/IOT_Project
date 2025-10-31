@@ -50,8 +50,12 @@ const io = new Server(server, {
 
 io.on("connection", async (socket) => {
   setInterval(async () => {
-    const data = await db.getLatestDataSensor();
+    let data = await db.getLatestDataSensor();
+    let theshold = await db.getNumberThresholddata();
+
     io.emit("data_sensor", data);
+    io.emit("thres_hold", theshold);
+
   }, 3000);
   console.log("Client connected:", socket.id);
   socket.on("disconnect", () => {
@@ -102,8 +106,37 @@ client.on("message", async (topic, message) => {
     switch (topic) {
       case "data/sensor":
         insertId = await db.saveDataSensor(data);
+
         if (insertId) console.log(` Đã lưu vào data_sensor ID: ${insertId}`);
-        io.emit("mqtt_message", data);
+
+        if (data.dust >= 50) {
+          db.saveThreshold({ name: "dust" });
+          const data3 = {
+            device: "rd",
+            status: 1
+          }
+          client.publish("device", JSON.stringify(data3), (err) => {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log("thành cồng");
+            }
+          });
+          console.log("vượt ngưỡng")
+        } else {
+          const data3 = {
+            device: "rd",
+            status: 0
+          }
+          client.publish("device", JSON.stringify(data3), (err) => {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log("thành cồng");
+            }
+          });
+          io.emit("mqtt_message", data);
+        }
         break;
 
       case "action/history":
@@ -113,6 +146,7 @@ client.on("message", async (topic, message) => {
         if (data?.device && data.device !== "null") {
           io.emit("action_history", data);
           console.log(" Đã gửi socket action_history");
+
         }
         break;
       //bắt sự kiện esp32 cắm và cập nhập tình trạng thiết bị mới nhất
@@ -137,6 +171,9 @@ app.get("/", (req, res) => {
   res.send("Hello from Node.js backend! can u hre");
 });
 
+
+
+
 //bật tắt thiết bị
 app.post("/pub-data-device", (req, res) => {
   const data = req.body;
@@ -151,6 +188,8 @@ app.post("/pub-data-device", (req, res) => {
     `thành công pub data đến topic device:${data.device}, status:${data.status}`
   );
 });
+
+
 
 //lấy dữ liệu data-sensor
 app.get("/data-sensor", async (req, res) => {
@@ -176,6 +215,7 @@ app.get("/data-sensor", async (req, res) => {
 app.get("/latest-data-sensor", async (req, res) => {
   try {
     const data = await db.getLatestDataSensor();
+
     //lấy 9 dữ liệu cảm biến mới nhất
     io.emit("data_sensor", data);
   } catch (error) {

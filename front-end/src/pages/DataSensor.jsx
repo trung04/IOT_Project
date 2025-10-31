@@ -11,8 +11,9 @@ const DataSensor = () => {
   const [dataSensor, setDataSensor] = useState([]);
   //lưu trữ tổng số trang
   const [number, setNumber] = useState(1);
-
   const [page, setPage] = useState(1);
+  const [sizePage, setSizePage] = useState(10);
+  //lưu trữ số lượng bản ghi của 1 trang
 
   //biến lữu trữ tạm của searchBy
   const [temp1, setTemp1] = useState("all");
@@ -57,15 +58,15 @@ const DataSensor = () => {
       // nếu là chuỗi , xử lý theo đúng format ngày của database
       if (!isNumber) {
         const words = searchValue.trim().split(" ");
-        if (words.length == 2) {
+        if (words.length === 2) {
           const [day, month, year] = words[1].split("/");
           const reversedDate = `${year}-${month}-${day}`;
           searchDate = reversedDate.trim() + " " + words[0].trim();
-        } else if (words.length == 1) {
+        } else if (words.length === 1) {
           const date = searchValue.trim().split("/");
-          if (date.length == 3) {
+          if (date.length === 3) {
             searchDate = `${date[2]}-${date[1]}-${date[0]}`;
-          } else if (date.length == 2) {
+          } else if (date.length === 2) {
             searchDate = `${date[1]}-${date[0].padStart(2, 0)}`;
           }
         }
@@ -74,7 +75,7 @@ const DataSensor = () => {
         const res = await axios.get("http://localhost:3001/data-sensor", {
           params: {
             page: page,
-            sizePage: 10,
+            sizePage: sizePage,
             searchBy: searchBy,
             searchValue: isNumber ? searchValue : searchDate,
             sortBy: sortBy.name,
@@ -89,7 +90,7 @@ const DataSensor = () => {
       }
     };
     fetch();
-  }, [page, searchValue, searchBy, sortBy]);
+  }, [page, searchValue, searchBy, sortBy,sizePage]);
 
   return (
     <>
@@ -106,7 +107,7 @@ const DataSensor = () => {
             }}
           >
             <div className="row">
-              <div className="col">
+              <div id="search" className="col" >
                 <input
                   onChange={(e) => {
                     setTemp2(e.target.value);
@@ -129,7 +130,7 @@ const DataSensor = () => {
                   </>
                 )}
               </div>
-              <div className="col-2 ">
+              <div id="select" className="col-2 ">
                 <select
                   onChange={(e) => {
                     setTemp1(e.target.value);
@@ -143,8 +144,22 @@ const DataSensor = () => {
                   <option value="temperature">Temperature</option>
                   <option value="humidity">Humidity</option>
                   <option value="light">Light</option>
-                  <option value="rd">rd</option>
+                  <option value="dust">Dust</option>
                   <option value="created_at">Datetime</option>
+                </select>
+
+                <select
+                  onChange={(e) => {
+                   setSizePage(e.target.value);
+                  }}
+                  class="form-select border border-dark p-2 mt-2"
+                  aria-label="Default select example"
+                >
+                  <option selected value="10">
+                    10 bản ghi
+                  </option>
+                  <option value="15">15 bản ghi</option>
+                  <option value="20">20 bản ghi</option>
                 </select>
               </div>
 
@@ -247,12 +262,12 @@ const DataSensor = () => {
                       </svg>
                     </span>
                   </th>
-                  <th scope="col">
-                    Rd
+                    <th scope="col">
+                    Dust
                     <span type="button">
                       <svg
                         onClick={() => {
-                          handleSortBy("rd");
+                          handleSortBy("dust");
                         }}
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 640 640"
@@ -268,6 +283,7 @@ const DataSensor = () => {
                       </svg>
                     </span>
                   </th>
+              
                   <th scope="col">
                     Time
                     <span type="button">
@@ -300,7 +316,7 @@ const DataSensor = () => {
                         <td>{item.temperature}</td>
                         <td>{item.humidity}</td>
                         <td>{item.light}</td>
-                        <td>{item.rd}</td>
+                         <td>{item.dust}</td>
                         <td>
                           {new Date(item.created_at).toLocaleString("vi-VN", {
                             timeZone: "Asia/Ho_Chi_Minh",
@@ -332,7 +348,7 @@ const DataSensor = () => {
                 }}
               >
                 <Pagination
-                  count={Math.ceil(number / 10)}
+                  count={Math.ceil(number / sizePage)}
                   page={page}
                   variant="outlined"
                   shape="rounded"

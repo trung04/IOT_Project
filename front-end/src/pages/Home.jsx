@@ -52,6 +52,7 @@ const Home = () => {
   const [usedDevice, setUsedDevice] = useState([]);
   //dữ liệu cảm biến
   const [dataSensor, setDataSensor] = useState({});
+  const [threshold, setThreshold] = useState(0)
   //dữ liệu cho đồ thị  một
   const [data, setData] = useState({
     labels: ["January", "February", "March", "April", "May", "June", "July"],
@@ -60,8 +61,8 @@ const Home = () => {
         label: "Temperature",
         data: [65, 59, 80, 81, 56, 55, 40],
         fill: false,
-        borderColor: "red",
-        backgroundColor: "rgba(235, 56, 110, 0.2)",
+        borderColor: "black",
+        backgroundColor: "rgba(28, 59, 163, 0.2)",
         tension: 0.1, // smooth curves
       },
       {
@@ -154,6 +155,7 @@ const Home = () => {
     socket.on("action_history", (data) => {
       console.log(data);
       setDevice((prev) =>
+        //cập nhập  lại status của các device
         prev.map(
           (item) =>
             item.device.toLowerCase().trim() === data.device
@@ -181,9 +183,9 @@ const Home = () => {
             const found = res.data.find((item) => item.device === d.device);
             return found
               ? {
-                  ...d,
-                  status: String(found.action).toLowerCase().trim() === "on",
-                }
+                ...d,
+                status: String(found.action).toLowerCase().trim() === "on",
+              }
               : d;
           })
         );
@@ -193,23 +195,38 @@ const Home = () => {
     };
     fetch();
   }, []);
+  //kéo dữ liệu thời gian thực về cho  biếu đồ
+  useEffect(() => {
+    socket.on("thres_hold", (data) => {
+      console.log(data);
+      setThreshold(data)
+
+
+    });
+
+    return () => {
+      socket.off("threshold");
+    };
+  }, []);
 
   //kéo dữ liệu thời gian thực về cho  biếu đồ
   useEffect(() => {
     socket.on("data_sensor", (data) => {
+      console.log(data);
       setDataSensor(data);
+
       const dataRes = data;
       const temperatureData = [];
       const humidityData = [];
       const lightData = [];
-      const rdData = [];
+      const dustData = [];
       const dateTimeData = [];
 
       for (let i = 8; i >= 0; i--) {
         temperatureData.push(dataRes[i]?.temperature);
         humidityData.push(dataRes[i]?.humidity);
         lightData.push(dataRes[i]?.light);
-        rdData.push(dataRes[i]?.rd);
+        dustData.push(dataRes[i]?.dust);
         dateTimeData.push(
           new Date(dataRes[i]?.created_at).toLocaleString("vi-VN", {
             timeZone: "Asia/Ho_Chi_Minh",
@@ -230,8 +247,8 @@ const Home = () => {
             label: "Temperature",
             data: temperatureData,
             fill: false,
-            borderColor: "red",
-            backgroundColor: "rgba(235, 56, 110, 0.2)",
+            borderColor: "black",
+            backgroundColor: "rgba(35, 172, 90, 0.2)",
             tension: 0.1, // smooth curves
           },
           {
@@ -250,21 +267,29 @@ const Home = () => {
             backgroundColor: "rgba(223, 252, 58, 0.2)",
             tension: 0.1, // smooth curves
           },
-        ],
-      });
-      setData2({
-        labels: dateTimeData,
-        datasets: [
           {
-            label: "rd",
-            data: rdData,
+            label: "Dust",
+            data: dustData,
             fill: false,
             borderColor: "red",
             backgroundColor: "rgba(235, 56, 110, 0.2)",
             tension: 0.1, // smooth curves
-          },
+          }
         ],
       });
+      // setData2({
+      //   labels: dateTimeData,
+      //   datasets: [
+      //     {
+      //       label: "rain",
+      //       data: rainData,
+      //       fill: false,
+      //       borderColor: "red",
+      //       backgroundColor: "rgba(235, 56, 110, 0.2)",
+      //       tension: 0.1, // smooth curves
+      //     },
+      //   ],
+      // });
     });
 
     return () => {
@@ -274,6 +299,7 @@ const Home = () => {
 
   return (
     <>
+
       <Header />
 
       <div className="" style={{ background: "#D9E5F6", height: "90vh " }}>
@@ -360,8 +386,8 @@ const Home = () => {
                           device[0]?.status === true
                             ? true
                             : device[0]?.status === false
-                            ? false
-                            : undefined
+                              ? false
+                              : undefined
                         }
                         onChange={() => {
                           toggleDevice(1);
@@ -415,8 +441,8 @@ const Home = () => {
                           device[1]?.status === true
                             ? true
                             : device[1]?.status === false
-                            ? false
-                            : undefined
+                              ? false
+                              : undefined
                         }
                         onChange={() => {
                           toggleDevice(2);
@@ -562,8 +588,8 @@ const Home = () => {
                           device[2]?.status === true
                             ? true
                             : device[2]?.status === false
-                            ? false
-                            : undefined
+                              ? false
+                              : undefined
                         }
                         onChange={() => {
                           toggleDevice(3);
@@ -575,42 +601,13 @@ const Home = () => {
               </div>
             </div>
             <div
-              id="rd-control"
+              id="ac-control"
               className="col me-2 d-flex justify-content-center align-items-center"
               style={{ background: "#FFFFFF" }}
             >
-              <div className="row d-flex justify-content-center align-items-center">
-                <div className="col">{/* hình ảnh của thiết bị rd */}</div>
-                <div className="col" style={{ scale: "1.5" }}>
-                  {device[3]?.status === undefined ? (
-                    <div
-                      className="spinner-border spinner-border-sm text-primary"
-                      role="status"
-                    >
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                  ) : (
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="ac"
-                        checked={
-                          device[3]?.status === true
-                            ? true
-                            : device[3]?.status === false
-                            ? false
-                            : undefined
-                        }
-                        onChange={() => {
-                          toggleDevice(4);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+
             </div>
+
           </div>
           <div className="row mb-2">
             <div
@@ -619,7 +616,7 @@ const Home = () => {
             >
               DATA
             </div>
-            <div
+            <div id="temperature"
               className="col me-2 d-flex align-items-center justify-content-center "
               style={{
                 background: "#FFFFFF",
@@ -700,7 +697,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
-            <div
+            <div id="humidity"
               className="col me-2 d-flex align-items-center justify-content-center "
               style={{
                 background: "#FFFFFF",
@@ -781,7 +778,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
-            <div
+            <div id="light"
               className="col me-2 d-flex align-items-center justify-content-center "
               style={{
                 background: "#FFFFFF",
@@ -863,7 +860,7 @@ const Home = () => {
                 </div>
               </div>
             </div>
-            <div
+            <div id="light"
               className="col me-2 d-flex align-items-center justify-content-center "
               style={{
                 background: "#FFFFFF",
@@ -875,64 +872,57 @@ const Home = () => {
               <div className="row  ">
                 <div className="col ">
                   <div className="row fw-bold">
-                    <small>Rd</small>
+                    <small>Dust</small>
                   </div>
                   <div className="row fw-bold text-center">
-                    <div className="col fs-2">{dataSensor[0]?.rd}L</div>
+                    <div className="col fs-2">
+                      <div
+                        style={{
+                          color: dataSensor[0]?.dust > 50 ? "red" : "black",
+                          fontWeight: dataSensor[0]?.dust > 50 ? "bold" : "normal",
+                          animation: dataSensor[0]?.dust > 50 ? "blink 1s infinite" : "none",
+                          "@keyframes blink": {
+                            "0%": { opacity: 1 },
+                            "50%": { opacity: 0 },
+                            "100%": { opacity: 1 },
+                          },
+                        }}
+                      >
+                        {dataSensor[0]?.dust}
+                      </div>
+
+
+                      <div> {threshold}</div>
+                    </div>
                   </div>
                 </div>
                 <div
                   className="col d-flex align-items-center"
                   style={{ scale: "2" }}
                 >
-                  {/* <>
-                    {dataSensor[0]?.light <= 5 ? (
-                      <img
-                        width="40"
-                        height="40"
-                        src="/gif/dark.gif"
-                        alt="dim light"
-                        className="rounded-circle"
-                      />
-                    ) : dataSensor[0]?.light <= 100 ? (
-                      <img
-                        width="50"
-                        height="50"
-                        src="/gif/look.gif"
-                        alt="normal light"
-                        className="rounded-circle"
-                      />
-                    ) : (
-                      <img
-                        width="50"
-                        height="50"
-                        src="/gif/too-bright.gif"
-                        alt="bright light"
-                        className="rounded-circle"
-                      />
-                    )}
-                  </> */}
+
+
                 </div>
               </div>
             </div>
           </div>
 
           <div className="row" style={{ width: "101.3%", height: "43vh" }}>
-            <div className="col-6">
-              <Line
-                options={options}
-                data={data}
-                style={{ backgroundColor: "#FFFFFF" }}
-              />
-            </div>
 
-            <div className="col-6">
+            <Line
+              options={options}
+              data={data}
+              style={{ backgroundColor: "#FFFFFF" }}
+            />
+
+
+            {/* <div className="col-6">
               <Line
                 options={options}
                 data={data2}
                 style={{ backgroundColor: "#FFFFFF" }}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

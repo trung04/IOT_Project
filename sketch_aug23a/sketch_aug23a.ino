@@ -16,8 +16,8 @@ const char* topic_start = "esp32/start";
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
 // WiFi
-const char* ssid = "Trung";
-const char* password = "21122004@";
+const char* ssid = "TrungThanh";
+const char* password = "tttttttt";
 //LED
 #define LED_PIN 14  //GPOP14
 #define FAN_PIN 13  // GPI13
@@ -177,7 +177,7 @@ void loop() {
   client.loop();
   float h = dht.readHumidity();
   float t = dht.readTemperature();
-  float rd = random(10, 50);
+  float dust = random(0, 100);
 
   if (isnan(h) || isnan(t)) {
     Serial.println("Lỗi đọc DHT22!");
@@ -200,8 +200,8 @@ void loop() {
   DataSensor += "\"light\":";
   DataSensor += String(lux);
   DataSensor +=",";
-   DataSensor += "\"rd\":";
-   DataSensor += String(rd);
+   DataSensor += "\"dust\":";
+   DataSensor += String(dust);
   DataSensor += "}";
   Serial.print("Gửi MQTT: ");
   Serial.println(DataSensor);

@@ -8,16 +8,21 @@ const ActionHistory = () => {
   const [dataActionHistory, setDataActionHistory] = useState([]);
   //lưu trữ tổng số bản ghi để phân trang
   const [number, setNumber] = useState(1);
+
+  //dùng để lưu trữ dữ liệu cho dataSearch
   const [dataFilter, setDataFilter] = useState({
     device: "all",
     action: "all",
     datetime: "",
   });
+
   const [dataSearch, setDataSearch] = useState({
     device: "all",
     action: "all",
     datetime: "",
   });
+  //lưu trữ bản ghi của 1 trang
+  const [sizePage, setSizePage] = useState(10);
   //lưu trữ trang hiện tại
   const [page, setPage] = useState(1);
   //lưu trữ sắp xếp theo trường dữ liệu nào
@@ -60,15 +65,15 @@ const ActionHistory = () => {
       //hàm xử lý về đúng định dạng ngày với database
       let searchDate = "";
       const words = dataSearch.datetime.trim().split(" ");
-      if (words.length == 2) {
+      if (words.length === 2) {
         const [day, month, year] = words[1].split("/");
         const reversedDate = `${year}-${month}-${day}`;
         searchDate = reversedDate.trim() + " " + words[0].trim();
-      } else if (words.length == 1) {
+      } else if (words.length === 1) {
         const date = dataSearch.datetime.trim().split("/");
-        if (date.length == 3) {
+        if (date.length === 3) {
           searchDate = `${date[2]}-${date[1]}-${date[0]}`;
-        } else if (date.length == 2) {
+        } else if (date.length === 2) {
           searchDate = `${date[1]}-${date[0].padStart(2, 0)}`;
         }
       }
@@ -77,7 +82,7 @@ const ActionHistory = () => {
         const res = await axios.get("http://localhost:3001/action-history", {
           params: {
             page: page,
-            sizePage: 10,
+            sizePage: sizePage,
             sortBy: sortBy.name,
             device: dataSearch.device,
             action: dataSearch.action,
@@ -93,7 +98,7 @@ const ActionHistory = () => {
       }
     };
     fetch();
-  }, [page, sortBy, dataSearch]);
+  }, [page, sortBy, dataSearch,sizePage]);
   return (
     <>
       <Header />
@@ -130,7 +135,7 @@ const ActionHistory = () => {
                   <option value="led">Led</option>
                   <option value="fan">Fan</option>
                   <option value="ac">AC(Air Conditioner)</option>
-                  <option value="rd">RD</option>
+                  {/* <option value="rd">RD</option> */}
                 </select>
               </div>
               {/* lọc theo hành động */}
@@ -172,18 +177,39 @@ const ActionHistory = () => {
                 <button className="btn btn-primary py-2 px-4" type="submit">
                   Search
                 </button>
+
               </div>
             </div>
           </form>
-          <div className="col mt-2">
-            <small className="text-start d-block">
-              <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>
-              <div>
-                HH:mm:ss dd/MM/yyyy &nbsp; ví dụ:{" "}
-                <strong>15:53:48 10/09/2025</strong>
-              </div>
-            </small>
+          <div className="row">
+            <div className="col mt-2">
+              <small className="text-start d-block">
+                <div className="fw-bold ">Định đạng tìm kiếm theo ngày</div>
+                <div>
+                  HH:mm:ss dd/MM/yyyy &nbsp; ví dụ:{" "}
+                  <strong>15:53:48 10/09/2025</strong>
+                </div>
+              </small>
+            </div>
+            <div className="col-2 mt-2">
+              <select
+                name="device"
+                id="selectPage"
+                className="form-select border border-dark p-2"
+                onChange={(e) => {
+                  setSizePage(e.target.value);
+                }}
+              >
+                <option selected value="10">
+                  10 bản ghi
+                </option>
+                <option value="15">15 bản ghi</option>
+                <option value="20">20 bản ghi</option>
+              </select>
+            </div>
+            <div className="col-3"></div>
           </div>
+
 
           <div className="row text-center mt-3">
             <table className="table">
@@ -317,7 +343,7 @@ const ActionHistory = () => {
                 }}
               >
                 <Pagination
-                  count={Math.ceil(number / 10)}
+                  count={Math.ceil(number / sizePage)}
                   page={page}
                   variant="outlined"
                   shape="rounded"
